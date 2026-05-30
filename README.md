@@ -1,2 +1,2 @@
 # fpml_workspace
-FpML XSD workspace
+FpML XSDの調査をするためのworkspaceです。
