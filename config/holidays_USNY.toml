@@ -1,0 +1,28 @@
+# ニューヨーク市場 (USNY) 祝祭日カレンダー
+# 固定祝祭日のみ（2024-2028年）
+
+[holidays]
+# 2024
+"2024-01-01" = "New Year's Day"
+"2024-07-04" = "Independence Day"
+"2024-12-25" = "Christmas Day"
+
+# 2025
+"2025-01-01" = "New Year's Day"
+"2025-07-04" = "Independence Day"
+"2025-12-25" = "Christmas Day"
+
+# 2026
+"2026-01-01" = "New Year's Day"
+"2026-07-04" = "Independence Day"
+"2026-12-25" = "Christmas Day"
+
+# 2027
+"2027-01-01" = "New Year's Day"
+"2027-07-04" = "Independence Day"
+"2027-12-25" = "Christmas Day"
+
+# 2028
+"2028-01-01" = "New Year's Day"
+"2028-07-04" = "Independence Day"
+"2028-12-25" = "Christmas Day"
