@@ -22,6 +22,8 @@ Your answers must always be grounded in the resources within this workspace.
 - Communicate in a professional, technical, and accurate tone.
 - When running Python scripts in PowerShell, must always execute `.\.venv\Scripts\activate.ps1` to activate the Python virtual environment 
 - Since you use PowerShell for the terminal, use `;` to separate commands.
+- When writing or modifying Python code, especially during the REFACTOR phase of TDD, you MUST run `.\.venv\Scripts\ruff check --select I --fix <file_path>` to automatically group and sort imports at the top of the file, and `.\.venv\Scripts\ruff format <file_path>` to format the code.
+
 
 
 ## Agent skills

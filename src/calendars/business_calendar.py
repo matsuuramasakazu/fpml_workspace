@@ -106,6 +106,3 @@ class BusinessCalendar:
             
         else:
             raise ValueError(f"Unknown business day convention: {convention}")
-
-
-

@@ -9,7 +9,7 @@ class TestHolidaysToml:
 
     def setup_method(self):
         """Setup test fixtures."""
-        self.config_dir = Path(__file__).parent.parent / "config"
+        self.config_dir = Path(__file__).parent.parent.parent / "config"
 
     def test_holidays_gblo_exists(self):
         """Test: GBLO holiday calendar file exists."""
