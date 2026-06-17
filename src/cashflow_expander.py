@@ -41,10 +41,13 @@ class CashflowExpander:
                 if trade.swap is not None:
                     for stream in trade.swap.swap_stream:
                         payment_periods = scheduler.generate_payment_periods(stream)
+                        principal_exchanges = scheduler.generate_principal_exchanges(
+                            stream
+                        )
                         stream.cashflows = Cashflows(
                             cashflows_match_parameters=True,
                             payment_calculation_period=payment_periods,
-                            principal_exchange=[],
+                            principal_exchange=principal_exchanges,
                         )
 
         # 4. XMLシリアライザの初期化と書き出し

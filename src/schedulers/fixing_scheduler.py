@@ -76,13 +76,23 @@ class FixingScheduler:
         # spread と multiplier
         spread = None
         if floating_rate_calc.spread_schedule:
-            spread = floating_rate_calc.spread_schedule.initial_value
+            if isinstance(floating_rate_calc.spread_schedule, list):
+                if len(floating_rate_calc.spread_schedule) > 0:
+                    spread = floating_rate_calc.spread_schedule[0].initial_value
+            else:
+                spread = floating_rate_calc.spread_schedule.initial_value
 
         multiplier = None
         if floating_rate_calc.floating_rate_multiplier_schedule:
-            multiplier = (
-                floating_rate_calc.floating_rate_multiplier_schedule.initial_value
-            )
+            if isinstance(floating_rate_calc.floating_rate_multiplier_schedule, list):
+                if len(floating_rate_calc.floating_rate_multiplier_schedule) > 0:
+                    multiplier = floating_rate_calc.floating_rate_multiplier_schedule[
+                        0
+                    ].initial_value
+            else:
+                multiplier = (
+                    floating_rate_calc.floating_rate_multiplier_schedule.initial_value
+                )
 
         obs = RateObservation(
             reset_date=XmlDate(

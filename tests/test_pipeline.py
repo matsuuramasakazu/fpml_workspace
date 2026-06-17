@@ -104,3 +104,80 @@ def test_pipeline_cashflow_expansion():
         calc1_fixed = p1_fixed.calculation_period[0]
         assert calc1_fixed.fixed_rate == Decimal("0.06")
         assert calc1_fixed.notional_amount == Decimal("50000000.00")
+
+
+def test_pipeline_cross_currency_principal_exchange():
+    """E2E test to verify cross-currency swap cashflow and principal exchange expansion using ird-ex052."""
+    from datetime import date
+    from decimal import Decimal
+
+    from xsdata.formats.dataclass.parsers import XmlParser
+
+    from fpml.confirmation import DataDocument
+
+    input_path = (
+        Path(__file__).parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex052-xccy-swap-OIS.xml"
+    )
+    assert input_path.exists(), f"Input file not found: {input_path}"
+
+    config_dir = Path(__file__).parent.parent / "config"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_file = Path(tmpdir) / "output_xccy.xml"
+
+        result = CashflowExpander.expand_cashflows(
+            str(input_path), str(output_file), str(config_dir)
+        )
+
+        assert result is True
+        assert output_file.exists()
+
+        parser = XmlParser()
+        doc = parser.from_path(output_file, DataDocument)
+
+        swap = doc.trade[0].swap
+        assert len(swap.swap_stream) == 2
+
+        # 最初のストリーム: USD Floating Leg
+        usd_stream = swap.swap_stream[0]
+        assert usd_stream.cashflows is not None
+        assert usd_stream.cashflows.cashflows_match_parameters is True
+        assert len(usd_stream.cashflows.principal_exchange) == 2
+
+        usd_init = usd_stream.cashflows.principal_exchange[0]
+        assert usd_init.unadjusted_principal_exchange_date.to_date() == date(
+            2018, 9, 10
+        )
+        assert usd_init.adjusted_principal_exchange_date.to_date() == date(2018, 9, 10)
+        assert usd_init.principal_exchange_amount == Decimal("-121700000")
+
+        usd_final = usd_stream.cashflows.principal_exchange[1]
+        assert usd_final.unadjusted_principal_exchange_date.to_date() == date(
+            2023, 9, 10
+        )
+        assert usd_final.adjusted_principal_exchange_date.to_date() == date(2023, 9, 11)
+        assert usd_final.principal_exchange_amount == Decimal("121700000")
+
+        # 2番目のストリーム: JPY Fixed Leg
+        jpy_stream = swap.swap_stream[1]
+        assert jpy_stream.cashflows is not None
+        assert jpy_stream.cashflows.cashflows_match_parameters is True
+        assert len(jpy_stream.cashflows.principal_exchange) == 2
+
+        jpy_init = jpy_stream.cashflows.principal_exchange[0]
+        assert jpy_init.unadjusted_principal_exchange_date.to_date() == date(
+            2018, 9, 10
+        )
+        assert jpy_init.adjusted_principal_exchange_date.to_date() == date(2018, 9, 10)
+        assert jpy_init.principal_exchange_amount == Decimal("-100500000")
+
+        jpy_final = jpy_stream.cashflows.principal_exchange[1]
+        assert jpy_final.unadjusted_principal_exchange_date.to_date() == date(
+            2023, 9, 10
+        )
+        assert jpy_final.adjusted_principal_exchange_date.to_date() == date(2023, 9, 11)
+        assert jpy_final.principal_exchange_amount == Decimal("100500000")
