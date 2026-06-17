@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 import pytest
 
 from fpml.confirmation import DataDocument, Party, PartyReference
-from src.calculators.reference_resolver import ReferenceResolver
+from src.schedulers.reference_resolver import ReferenceResolver
 
 
 @dataclass

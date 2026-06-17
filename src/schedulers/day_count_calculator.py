@@ -30,6 +30,7 @@ Example:
     >>> print(year_fraction)
     0.086111...
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -40,16 +41,16 @@ from typing import Dict, Type
 
 class DayCountMethod(ABC):
     """Abstract base class for day count calculation methods."""
-    
+
     @abstractmethod
     def calculate_year_fraction(self, start: date, end: date) -> Decimal:
         """
         Calculate year fraction between two dates.
-        
+
         Args:
             start: Start date (inclusive).
             end: End date (exclusive per ISDA).
-            
+
         Returns:
             Year fraction as Decimal with high precision.
         """
@@ -59,15 +60,15 @@ class DayCountMethod(ABC):
 class ACT360(DayCountMethod):
     """
     ACT/360 method: actual/360.
-    
+
     Calculates day count based on actual calendar days,
     dividing by 360 (ISDA convention).
     """
-    
+
     def calculate_year_fraction(self, start: date, end: date) -> Decimal:
         """
         Calculate actual/360 year fraction.
-        
+
         Period: Jan 1 to Feb 1 = 31 days (actual)
         Year fraction = 31 / 360
         """
@@ -78,11 +79,11 @@ class ACT360(DayCountMethod):
 class ACT365Fixed(DayCountMethod):
     """
     ACT/365.FIXED method: actual/365 fixed.
-    
+
     Calculates day count based on actual calendar days,
     dividing by 365 (no leap year adjustment).
     """
-    
+
     def calculate_year_fraction(self, start: date, end: date) -> Decimal:
         """Calculate actual/365 fixed year fraction."""
         actual_days = (end - start).days
@@ -92,56 +93,66 @@ class ACT365Fixed(DayCountMethod):
 class ThirtyBy360(DayCountMethod):
     """
     30/360 method: thirty/360 (ISDA convention).
-    
+
     Calculates using a standardized 30-day month convention,
     dividing by 360. Implements ISDA 30/360 rules for day count.
-    
+
     Rules:
     1. If D1 is 31, set D1 to 30
-    2. If D2 is 31, set D2 to 30
-    3. If D1 is 30 and D2 > 30, set D2 to 30
-    4. Special handling for February end-of-month
+    2. If D2 is 31 and D1 is 30, set D2 to 30
     """
-    
+
     def calculate_year_fraction(self, start: date, end: date) -> Decimal:
         """
         Calculate 30/360 year fraction using ISDA convention.
-        
-        Standardizes both dates to 30-day months before calculating
-        the day count difference.
-        
+
         Args:
             start: Start date
             end: End date
-            
+
         Returns:
             Year fraction as (standardized_day_count / 360)
         """
         # Extract components from dates
         d1, m1, y1 = start.day, start.month, start.year
         d2, m2, y2 = end.day, end.month, end.year
-        
+
         # ISDA 30/360 adjustment rules
         # Rule 1: If D1 is 31, set D1 to 30
         if d1 == 31:
             d1 = 30
-        
-        # Rule 2: If D2 is 31, set D2 to 30
+
+        # Rule 2: If D2 is 31 and D1 is 30, set D2 to 30
+        if d2 == 31 and d1 == 30:
+            d2 = 30
+
+        # Calculate standardized day count
+        day_count = 360 * (y2 - y1) + 30 * (m2 - m1) + (d2 - d1)
+        return Decimal(day_count) / Decimal(360)
+
+
+class ThirtyEBy360(DayCountMethod):
+    """
+    30E/360 method: thirtyE/360 (Eurobond Basis).
+
+    Calculates using standardized 30-day month convention,
+    where both D1 and D2 are unconditionally adjusted if they are 31.
+
+    Rules:
+    1. If D1 is 31, set D1 to 30
+    2. If D2 is 31, set D2 to 30
+    """
+
+    def calculate_year_fraction(self, start: date, end: date) -> Decimal:
+        """Calculate 30E/360 year fraction."""
+        d1, m1, y1 = start.day, start.month, start.year
+        d2, m2, y2 = end.day, end.month, end.year
+
+        if d1 == 31:
+            d1 = 30
         if d2 == 31:
             d2 = 30
-        
-        # Rule 3: If D1 is 30 and D2 > 30, set D2 to 30
-        # (This handles month-end boundary cases)
-        if d1 == 30 and d2 > 30:
-            d2 = 30
-        
-        # Special February handling: if d2 > 29 in February, cap at 30
-        # (This is a simplified rule; full ISDA has more nuance)
-        if m2 == 2 and d2 > 28:
-            # For simplicity in this implementation, treat Feb end-of-month as-is
-            pass
-        
-        # Calculate standardized day count
+
         day_count = 360 * (y2 - y1) + 30 * (m2 - m1) + (d2 - d1)
         return Decimal(day_count) / Decimal(360)
 
@@ -149,24 +160,25 @@ class ThirtyBy360(DayCountMethod):
 class DayCountCalculator:
     """
     Factory for day count calculations.
-    
+
     Provides unified interface to select day count method
     using Strategy pattern.
     """
-    
+
     _methods: Dict[str, Type[DayCountMethod]] = {
         "ACT/360": ACT360,
         "ACT/365.FIXED": ACT365Fixed,
         "30/360": ThirtyBy360,
+        "30E/360": ThirtyEBy360,
     }
-    
+
     def __init__(self, method_name: str):
         """
         Initialize calculator with specified method.
-        
+
         Args:
-            method_name: One of "ACT/360", "ACT/365.FIXED", "30/360".
-            
+            method_name: One of "ACT/360", "ACT/365.FIXED", "30/360", "30E/360".
+
         Raises:
             ValueError: If method_name is not recognized.
         """
@@ -176,25 +188,25 @@ class DayCountCalculator:
                 f"Supported: {', '.join(self._methods.keys())}"
             )
         self._method = self._methods[method_name]()
-    
+
     def calculate_year_fraction(self, start: date, end: date) -> Decimal:
         """
         Calculate year fraction using selected method.
-        
+
         Args:
             start: Start date.
             end: End date.
-            
+
         Returns:
             Year fraction as Decimal.
         """
         return self._method.calculate_year_fraction(start, end)
-    
+
     @classmethod
     def register_method(cls, name: str, method_class: Type[DayCountMethod]) -> None:
         """
         Register a custom day count method.
-        
+
         Args:
             name: Method name identifier.
             method_class: Class implementing DayCountMethod.

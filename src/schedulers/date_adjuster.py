@@ -2,12 +2,12 @@ from datetime import date
 from typing import List
 
 from fpml.confirmation import BusinessCenters, BusinessDayAdjustments
-from src.calculators.reference_resolver import ReferenceResolver
 from src.calendars.business_calendar import BusinessCalendar
+from src.schedulers.reference_resolver import ReferenceResolver
 
 
-class DateScheduler:
-    """FpML の BusinessDayAdjustments を解釈し、BusinessCalendar を用いて日付を調整するスケジューラー。"""
+class DateAdjuster:
+    """FpML の BusinessDayAdjustments を解釈し、BusinessCalendar を用いて日付を調整するクラス。"""
 
     def __init__(self, calendar: BusinessCalendar, resolver: ReferenceResolver):
         """
