@@ -8,6 +8,7 @@ from fpml.confirmation import Cashflows, DataDocument
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.reference_resolver import ReferenceResolver
 from src.schedulers.swap_stream_scheduler import SwapStreamScheduler
+from src.validators import FpmlValidator
 
 
 class CashflowExpander:
@@ -26,9 +27,12 @@ class CashflowExpander:
         input_path = Path(input_file)
         output_path = Path(output_file)
 
-        # 1. XMLパーサの初期化とロード
         parser = XmlParser()
         data_document = parser.from_path(input_path, DataDocument)
+
+        # 1.5. 入力データのバリデーション
+        validator = FpmlValidator()
+        validator.validate(data_document)
 
         # 2. カレンダー、リゾルバー、スケジューラーの初期化
         calendar = BusinessCalendar(config_dir=config_dir)

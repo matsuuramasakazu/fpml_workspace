@@ -1,7 +1,7 @@
 # Handoff Document: キャッシュフロー展開ツールの TDD 実装
 
 ## 次のセッションの目標
-- `e:\dev\python\fpml-workspace\PRD_CASHFLOW_EXPANSION.md`の要件を分割して GitHub に登録した Issue #9 から #15 のうち、次は **Issue #14** を **TDD (テスト駆動開発) アプローチで実装** する。
+- `e:\dev\python\fpml-workspace\PRD_CASHFLOW_EXPANSION.md`の要件を分割して GitHub に登録した Issue #9 から #15 のうち、次は **Issue #15** を **TDD (テスト駆動開発) アプローチで実装** する。
 
 ---
 
