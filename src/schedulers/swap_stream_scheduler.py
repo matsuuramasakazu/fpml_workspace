@@ -64,13 +64,19 @@ class SwapStreamScheduler:
         # 元本 (Notional) の取得
         calc_params = stream.calculation_period_amount.calculation
         notional_schedule = calc_params.notional_schedule
-        if notional_schedule.notional_step_schedule is not None:
-            notional = notional_schedule.notional_step_schedule.initial_value
-        else:
-            resolved_notional = self._resolver.resolve(
-                notional_schedule.notional_step_parameters_reference
-            )
-            notional = resolved_notional.initial_value
+        fx_linked_notional_schedule = calc_params.fx_linked_notional_schedule
+        notional = None
+
+        if notional_schedule is not None:
+            if notional_schedule.notional_step_schedule is not None:
+                notional = notional_schedule.notional_step_schedule.initial_value
+            else:
+                resolved_notional = self._resolver.resolve(
+                    notional_schedule.notional_step_parameters_reference
+                )
+                notional = resolved_notional.initial_value
+        elif fx_linked_notional_schedule is not None:
+            notional = fx_linked_notional_schedule.initial_value
 
         exchanges = []
         calc_dates = stream.calculation_period_dates
@@ -90,7 +96,9 @@ class SwapStreamScheduler:
                     adjusted_principal_exchange_date=XmlDate(
                         adjusted_date.year, adjusted_date.month, adjusted_date.day
                     ),
-                    principal_exchange_amount=-notional,
+                    principal_exchange_amount=-notional
+                    if notional is not None
+                    else None,
                 )
             )
 
@@ -109,7 +117,9 @@ class SwapStreamScheduler:
                     adjusted_principal_exchange_date=XmlDate(
                         adjusted_date.year, adjusted_date.month, adjusted_date.day
                     ),
-                    principal_exchange_amount=notional,
+                    principal_exchange_amount=notional
+                    if notional is not None
+                    else None,
                 )
             )
 

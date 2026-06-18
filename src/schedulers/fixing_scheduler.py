@@ -8,6 +8,7 @@ from fpml.confirmation import (
     RateObservation,
 )
 from src.calendars.business_calendar import BusinessCalendar
+from src.schedulers.date_adjuster import DateAdjuster
 from src.schedulers.reference_resolver import ReferenceResolver
 
 
@@ -22,6 +23,7 @@ class FixingScheduler:
         """
         self._calendar = calendar
         self._resolver = resolver
+        self._adjuster = DateAdjuster(calendar, resolver)
 
     def calculate_fixing(
         self, adjusted_start: date, adjusted_end: date, stream: InterestRateStream
@@ -51,26 +53,8 @@ class FixingScheduler:
 
         # Fixing日の算出
         fixing_dates = reset_dates.fixing_dates
-        offset_days = fixing_dates.period_multiplier
-
-        # ビジネスセンターの取得
-        fixing_centers = []
-        if fixing_dates.business_centers is not None:
-            fixing_centers = [
-                bc.value
-                for bc in fixing_dates.business_centers.business_center
-                if bc.value
-            ]
-        elif fixing_dates.business_centers_reference is not None:
-            centers_obj = self._resolver.resolve(
-                fixing_dates.business_centers_reference
-            )
-            fixing_centers = [
-                bc.value for bc in centers_obj.business_center if bc.value
-            ]
-
-        adjusted_fixing = self._calendar.add_business_days(
-            reset_date_val, offset_days, fixing_centers
+        adjusted_fixing = self._adjuster.resolve_relative_date_offset(
+            reset_date_val, fixing_dates
         )
 
         # spread と multiplier

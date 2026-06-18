@@ -4,7 +4,11 @@ from typing import List
 
 from xsdata.models.datatype import XmlDate
 
-from fpml.confirmation import CalculationPeriod, InterestRateStream
+from fpml.confirmation import (
+    CalculationPeriod,
+    FxLinkedNotionalAmount,
+    InterestRateStream,
+)
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.date_adjuster import DateAdjuster
 from src.schedulers.day_count_calculator import DayCountCalculator
@@ -21,6 +25,7 @@ class CalculationPeriodScheduler:
             calendar: 営業日判定・日付調整を行うBusinessCalendarインスタンス
             resolver: 参照解決を行うReferenceResolverインスタンス
         """
+        self._calendar = calendar
         self._resolver = resolver
         self._adjuster = DateAdjuster(calendar, resolver)
         self._fixing_scheduler = FixingScheduler(calendar, resolver)
@@ -118,14 +123,18 @@ class CalculationPeriodScheduler:
         day_count_calc = DayCountCalculator(day_count_fraction)
 
         # 元本の取得
-        notional_schedule = calc_params.notional_schedule
-        if notional_schedule.notional_step_schedule is not None:
-            notional = notional_schedule.notional_step_schedule.initial_value
-        else:
-            resolved_notional = self._resolver.resolve(
-                notional_schedule.notional_step_parameters_reference
-            )
-            notional = resolved_notional.initial_value
+        notional = None
+        fx_linked_notional_schedule = calc_params.fx_linked_notional_schedule
+
+        if fx_linked_notional_schedule is None:
+            notional_schedule = calc_params.notional_schedule
+            if notional_schedule.notional_step_schedule is not None:
+                notional = notional_schedule.notional_step_schedule.initial_value
+            else:
+                resolved_notional = self._resolver.resolve(
+                    notional_schedule.notional_step_parameters_reference
+                )
+                notional = resolved_notional.initial_value
 
         # 固定利率（ある場合）
         fixed_rate = None
@@ -147,6 +156,35 @@ class CalculationPeriodScheduler:
                 astart, aend, stream
             )
 
+            # FxLinkedNotionalAmountの構築
+            fx_linked_notional_amount = None
+            if fx_linked_notional_schedule is not None:
+                # リセット日の特定（一般には `adjusted_start`）
+                reset_date_val = astart
+                if stream.reset_dates is not None:
+                    if (
+                        stream.reset_dates.reset_relative_to.value
+                        != "CalculationPeriodStartDate"
+                    ):
+                        reset_date_val = aend
+
+                # FX決定日の算出
+                fixing_dates = fx_linked_notional_schedule.varying_notional_fixing_dates
+                adjusted_fx_spot_fixing = self._adjuster.resolve_relative_date_offset(
+                    reset_date_val, fixing_dates
+                )
+
+                fx_linked_notional_amount = FxLinkedNotionalAmount(
+                    reset_date=XmlDate(
+                        reset_date_val.year, reset_date_val.month, reset_date_val.day
+                    ),
+                    adjusted_fx_spot_fixing_date=XmlDate(
+                        adjusted_fx_spot_fixing.year,
+                        adjusted_fx_spot_fixing.month,
+                        adjusted_fx_spot_fixing.day,
+                    ),
+                )
+
             calc_period = CalculationPeriod(
                 unadjusted_start_date=XmlDate(ustart.year, ustart.month, ustart.day),
                 unadjusted_end_date=XmlDate(uend.year, uend.month, uend.day),
@@ -154,6 +192,7 @@ class CalculationPeriodScheduler:
                 adjusted_end_date=XmlDate(aend.year, aend.month, aend.day),
                 calculation_period_number_of_days=num_days,
                 notional_amount=notional,
+                fx_linked_notional_amount=fx_linked_notional_amount,
                 day_count_year_fraction=year_fraction,
                 fixed_rate=fixed_rate,
                 floating_rate_definition=floating_rate_def,

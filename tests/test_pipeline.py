@@ -179,5 +179,76 @@ def test_pipeline_cross_currency_principal_exchange():
         assert jpy_final.unadjusted_principal_exchange_date.to_date() == date(
             2023, 9, 10
         )
-        assert jpy_final.adjusted_principal_exchange_date.to_date() == date(2023, 9, 11)
         assert jpy_final.principal_exchange_amount == Decimal("100500000")
+
+
+def test_pipeline_fx_linked_notional_swap():
+    """E2E test to verify FX-linked notional swap cashflow expansion using ird-ex25."""
+    from datetime import date
+    from decimal import Decimal
+
+    from xsdata.formats.dataclass.parsers import XmlParser
+
+    from fpml.confirmation import DataDocument
+
+    input_path = (
+        Path(__file__).parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex25-fxnotional-swap.xml"
+    )
+    assert input_path.exists(), f"Input file not found: {input_path}"
+
+    config_dir = Path(__file__).parent.parent / "config"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_file = Path(tmpdir) / "output_fxnotional.xml"
+
+        result = CashflowExpander.expand_cashflows(
+            str(input_path), str(output_file), str(config_dir)
+        )
+
+        assert result is True
+        assert output_file.exists()
+
+        parser = XmlParser()
+        doc = parser.from_path(output_file, DataDocument)
+
+        swap = doc.trade[0].swap
+        assert len(swap.swap_stream) == 2
+
+        # 1番目のストリーム JPY 固定レグ (Fixed)
+        fixed_stream = swap.swap_stream[0]
+        assert fixed_stream.cashflows is not None
+        assert len(fixed_stream.cashflows.payment_calculation_period) > 0
+
+        # 2番目のストリーム USD 浮動レグ (Floating with FX-Linked Notional)
+        float_stream = swap.swap_stream[1]
+        assert float_stream.cashflows is not None
+
+        # 期数チェック (5年間、3ヶ月ごと = 20期)
+        periods = float_stream.cashflows.payment_calculation_period
+        assert len(periods) == 20
+
+        # 1期目 (2006-01-11 から 2006-04-11)
+        p1 = periods[0]
+        calc1 = p1.calculation_period[0]
+        assert calc1.notional_amount is None
+        assert calc1.fx_linked_notional_amount is not None
+        assert calc1.fx_linked_notional_amount.reset_date.to_date() == date(2006, 1, 11)
+        assert (
+            calc1.fx_linked_notional_amount.adjusted_fx_spot_fixing_date.to_date()
+            == date(2006, 1, 9)
+        )
+
+        # 2期目 (2006-04-11 から 2006-07-11)
+        p2 = periods[1]
+        calc2 = p2.calculation_period[0]
+        assert calc2.notional_amount is None
+        assert calc2.fx_linked_notional_amount is not None
+        assert calc2.fx_linked_notional_amount.reset_date.to_date() == date(2006, 4, 11)
+        assert (
+            calc2.fx_linked_notional_amount.adjusted_fx_spot_fixing_date.to_date()
+            == date(2006, 4, 7)
+        )

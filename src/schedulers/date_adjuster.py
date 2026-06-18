@@ -1,7 +1,11 @@
 from datetime import date
 from typing import List
 
-from fpml.confirmation import BusinessCenters, BusinessDayAdjustments
+from fpml.confirmation import (
+    BusinessCenters,
+    BusinessDayAdjustments,
+    RelativeDateOffset,
+)
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.reference_resolver import ReferenceResolver
 
@@ -21,7 +25,7 @@ class DateAdjuster:
     def _resolve_business_centers(
         self, adjustments: BusinessDayAdjustments
     ) -> List[str]:
-        """BusinessDayAdjustments から、ビジネスセンターコードのリストを返します。
+        """BusinessDayAdjustments から、ビジネスセンターコード of リストを返します。
 
         直接の business_centers がある場合はそれを使用し、
         business_centers_reference がある場合は ReferenceResolver を用いて解決します。
@@ -57,3 +61,41 @@ class DateAdjuster:
             return val_date
 
         return self._calendar.adjust_date(val_date, convention, centers)
+
+    def resolve_relative_date_offset(
+        self, base_date: date, offset: RelativeDateOffset
+    ) -> date:
+        """RelativeDateOffset パラメータに基づいて、base_date からの相対調整日を算出します。
+
+        Args:
+            base_date: 基準日
+            offset: FpML の RelativeDateOffset オブジェクト
+
+        Returns:
+            相対調整日
+        """
+        offset_days = offset.period_multiplier
+
+        # ビジネスセンターの取得
+        centers = []
+        if offset.business_centers is not None:
+            centers = [
+                bc.value for bc in offset.business_centers.business_center if bc.value
+            ]
+        elif offset.business_centers_reference is not None:
+            centers_obj = self._resolver.resolve(offset.business_centers_reference)
+            centers = [bc.value for bc in centers_obj.business_center if bc.value]
+
+        day_type = offset.day_type.value if offset.day_type is not None else "Business"
+        if day_type == "Business":
+            return self._calendar.add_business_days(base_date, offset_days, centers)
+        else:
+            # カレンダー日での加算
+            from datetime import timedelta
+
+            unadjusted = base_date + timedelta(days=offset_days)
+            if offset.business_day_convention is not None:
+                conv = offset.business_day_convention.value
+                if conv != "NONE":
+                    return self._calendar.adjust_date(unadjusted, conv, centers)
+            return unadjusted
