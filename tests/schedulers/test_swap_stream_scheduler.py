@@ -106,3 +106,62 @@ def test_swap_stream_scheduler_vanilla_swap_floating_leg():
     assert obs1.reset_date.to_date() == date(1994, 12, 14)
     # adjustedFixingDate = resetDate - 2 business days (GBLO) -> 1994-12-12
     assert obs1.adjusted_fixing_date.to_date() == date(1994, 12, 12)
+
+
+def test_swap_stream_scheduler_fx_linked_notional_leg():
+    """Test SwapStreamScheduler schedule generation for FX-linked notional leg using ird-ex25."""
+    from pathlib import Path
+
+    from xsdata.formats.dataclass.parsers import XmlParser
+
+    from fpml.confirmation import DataDocument
+
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex25-fxnotional-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    # 2番目のストリーム (USD, Floating with FX-Linked Notional)
+    usd_stream = doc.trade[0].swap.swap_stream[1]
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+    scheduler = SwapStreamScheduler(calendar, resolver)
+
+    periods = scheduler.generate_payment_periods(usd_stream)
+
+    # 5年物、3ヶ月に1回支払 -> 20期
+    assert len(periods) == 20
+
+    # 1期目の検証 (2006-01-11 から 2006-04-11)
+    p1 = periods[0]
+    assert len(p1.calculation_period) == 1
+    calc1 = p1.calculation_period[0]
+    assert calc1.adjusted_start_date.to_date() == date(2006, 1, 11)
+    assert calc1.adjusted_end_date.to_date() == date(2006, 4, 11)
+    assert calc1.notional_amount is None
+    assert calc1.fx_linked_notional_amount is not None
+    assert calc1.fx_linked_notional_amount.reset_date.to_date() == date(2006, 1, 11)
+    assert (
+        calc1.fx_linked_notional_amount.adjusted_fx_spot_fixing_date.to_date()
+        == date(2006, 1, 9)
+    )
+
+    # 2期目の検証 (2006-04-11 から 2006-07-11)
+    p2 = periods[1]
+    assert len(p2.calculation_period) == 1
+    calc2 = p2.calculation_period[0]
+    assert calc2.adjusted_start_date.to_date() == date(2006, 4, 11)
+    assert calc2.adjusted_end_date.to_date() == date(2006, 7, 11)
+    assert calc2.notional_amount is None
+    assert calc2.fx_linked_notional_amount is not None
+    assert calc2.fx_linked_notional_amount.reset_date.to_date() == date(2006, 4, 11)
+    assert (
+        calc2.fx_linked_notional_amount.adjusted_fx_spot_fixing_date.to_date()
+        == date(2006, 4, 7)
+    )

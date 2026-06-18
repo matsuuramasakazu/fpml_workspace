@@ -85,3 +85,40 @@ def test_generate_principal_exchanges_with_exchanges():
     assert jpy_final.unadjusted_principal_exchange_date.to_date() == date(2023, 9, 10)
     assert jpy_final.adjusted_principal_exchange_date.to_date() == date(2023, 9, 11)
     assert jpy_final.principal_exchange_amount == Decimal("100500000")
+
+
+def test_generate_principal_exchanges_fx_linked_notional():
+    """ird-ex25 の元本リセット型レグ（initialValueなし）で元本交換スケジュールが生成され、金額が None になることをテスト"""
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex25-fxnotional-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    # 2番目のストリーム (USD, Floating with FX-Linked Notional)
+    usd_stream = doc.trade[0].swap.swap_stream[1]
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+    scheduler = SwapStreamScheduler(calendar, resolver)
+
+    exchanges = scheduler.generate_principal_exchanges(usd_stream)
+
+    # 生成されるのは初期と最終の2つ
+    assert len(exchanges) == 2
+
+    # 初期元本交換
+    init_exch = exchanges[0]
+    assert init_exch.unadjusted_principal_exchange_date.to_date() == date(2006, 1, 11)
+    assert init_exch.adjusted_principal_exchange_date.to_date() == date(2006, 1, 11)
+    assert init_exch.principal_exchange_amount is None
+
+    # 最終元本交換
+    final_exch = exchanges[1]
+    assert final_exch.unadjusted_principal_exchange_date.to_date() == date(2011, 1, 11)
+    assert final_exch.adjusted_principal_exchange_date.to_date() == date(2011, 1, 11)
+    assert final_exch.principal_exchange_amount is None
