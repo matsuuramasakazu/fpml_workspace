@@ -78,24 +78,28 @@ class DateAdjuster:
 
         # ビジネスセンターの取得
         centers = []
-        if offset.business_centers is not None:
-            centers = [
-                bc.value for bc in offset.business_centers.business_center if bc.value
-            ]
-        elif offset.business_centers_reference is not None:
-            centers_obj = self._resolver.resolve(offset.business_centers_reference)
+        business_centers = getattr(offset, "business_centers", None)
+        business_centers_reference = getattr(offset, "business_centers_reference", None)
+
+        if business_centers is not None:
+            centers = [bc.value for bc in business_centers.business_center if bc.value]
+        elif business_centers_reference is not None:
+            centers_obj = self._resolver.resolve(business_centers_reference)
             centers = [bc.value for bc in centers_obj.business_center if bc.value]
 
-        day_type = offset.day_type.value if offset.day_type is not None else "Business"
-        if day_type == "Business":
+        day_type = getattr(offset, "day_type", None)
+        day_type_val = day_type.value if day_type is not None else "Business"
+
+        if day_type_val == "Business":
             return self._calendar.add_business_days(base_date, offset_days, centers)
         else:
             # カレンダー日での加算
             from datetime import timedelta
 
             unadjusted = base_date + timedelta(days=offset_days)
-            if offset.business_day_convention is not None:
-                conv = offset.business_day_convention.value
+            convention = getattr(offset, "business_day_convention", None)
+            if convention is not None:
+                conv = convention.value
                 if conv != "NONE":
                     return self._calendar.adjust_date(unadjusted, conv, centers)
             return unadjusted

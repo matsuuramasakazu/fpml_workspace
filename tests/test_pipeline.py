@@ -252,3 +252,125 @@ def test_pipeline_fx_linked_notional_swap():
             calc2.fx_linked_notional_amount.adjusted_fx_spot_fixing_date.to_date()
             == date(2006, 4, 7)
         )
+
+
+def test_pipeline_rfr_observation_shift_ex44():
+    """E2E test for RFR compound swap with Observation Shift using ird-ex44."""
+    from datetime import date
+    from decimal import Decimal
+
+    from xsdata.formats.dataclass.parsers import XmlParser
+
+    from fpml.confirmation import DataDocument
+
+    input_path = (
+        Path(__file__).parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex44-rfr-compound-swap-obs-period-shift.xml"
+    )
+    assert input_path.exists(), f"Input file not found: {input_path}"
+
+    config_dir = Path(__file__).parent.parent / "config"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_file = Path(tmpdir) / "output_ex44.xml"
+
+        result = CashflowExpander.expand_cashflows(
+            str(input_path), str(output_file), str(config_dir)
+        )
+
+        assert result is True
+        assert output_file.exists()
+
+        parser = XmlParser()
+        doc = parser.from_path(output_file, DataDocument)
+
+        swap = doc.trade[0].swap
+        assert len(swap.swap_stream) == 2
+
+        # 最初のレグ (Floating EONIA Leg)
+        float_stream = swap.swap_stream[0]
+        assert float_stream.cashflows is not None
+        assert len(float_stream.cashflows.payment_calculation_period) == 36
+
+        # 第1期の支払日 (2021-08-16 〜 2021-09-16)
+        # 終了日 2021-09-16 (木) + 1営業日 (EUTA) = 2021-09-17 (金)
+        p1 = float_stream.cashflows.payment_calculation_period[0]
+        assert p1.adjusted_payment_date.to_date() == date(2021, 9, 17)
+
+        # 第1期の計算期間と金利観測
+        calc1 = p1.calculation_period[0]
+        assert calc1.adjusted_start_date.to_date() == date(2021, 8, 16)
+        assert calc1.adjusted_end_date.to_date() == date(2021, 9, 16)
+        assert calc1.day_count_year_fraction is not None
+
+        floating_def = calc1.floating_rate_definition
+        assert floating_def is not None
+        # 営業日数は 23日 (TARGET カレンダー)
+        assert len(floating_def.rate_observation) == 23
+
+        obs1 = floating_def.rate_observation[0]
+        assert obs1.reset_date.to_date() == date(2021, 8, 16)
+        # Shift 5営業日: 2021-08-16 の5営業日前 -> 2021-08-09
+        assert obs1.adjusted_fixing_date.to_date() == date(2021, 8, 9)
+        assert obs1.observation_weight == 1
+
+
+def test_pipeline_rfr_lookback_ex45():
+    """E2E test for RFR compound swap with Lookback using ird-ex45."""
+    from datetime import date
+    from decimal import Decimal
+
+    from xsdata.formats.dataclass.parsers import XmlParser
+
+    from fpml.confirmation import DataDocument
+
+    input_path = (
+        Path(__file__).parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex45-rfr-compound-swap-lookback.xml"
+    )
+    assert input_path.exists(), f"Input file not found: {input_path}"
+
+    config_dir = Path(__file__).parent.parent / "config"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_file = Path(tmpdir) / "output_ex45.xml"
+
+        result = CashflowExpander.expand_cashflows(
+            str(input_path), str(output_file), str(config_dir)
+        )
+
+        assert result is True
+        assert output_file.exists()
+
+        parser = XmlParser()
+        doc = parser.from_path(output_file, DataDocument)
+
+        swap = doc.trade[0].swap
+        assert len(swap.swap_stream) == 2
+
+        # 最初のレグ (Floating EONIA Leg with Lookback)
+        float_stream = swap.swap_stream[0]
+        assert float_stream.cashflows is not None
+        assert len(float_stream.cashflows.payment_calculation_period) == 36
+
+        # 第1期の支払日: 2021-09-17 (金)
+        p1 = float_stream.cashflows.payment_calculation_period[0]
+        assert p1.adjusted_payment_date.to_date() == date(2021, 9, 17)
+
+        # 第1期の計算期間と金利観測
+        calc1 = p1.calculation_period[0]
+        floating_def = calc1.floating_rate_definition
+        assert floating_def is not None
+        assert len(floating_def.rate_observation) == 23
+
+        obs1 = floating_def.rate_observation[0]
+        assert obs1.reset_date.to_date() == date(2021, 8, 16)
+        # Lookback 5営業日: 2021-08-16 の5営業日前 -> 2021-08-09
+        assert obs1.adjusted_fixing_date.to_date() == date(2021, 8, 9)
+        assert obs1.observation_weight == 1

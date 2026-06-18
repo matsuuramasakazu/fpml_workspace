@@ -54,10 +54,24 @@ class PaymentPeriodScheduler:
             last_calc = group[-1]
             unadjusted_pay_date = last_calc.unadjusted_end_date
 
-            # paymentDatesAdjustments
-            pay_adjustments = stream.payment_dates.payment_dates_adjustments
+            # paymentDaysOffset の考慮
             base_date = last_calc.adjusted_end_date.to_date()
-            adjusted_pay_date = self._adjuster.adjust_date(base_date, pay_adjustments)
+            pay_dates = stream.payment_dates
+            if pay_dates.payment_days_offset is not None:
+                pay_date_val = self._adjuster.resolve_relative_date_offset(
+                    base_date, pay_dates.payment_days_offset
+                )
+            else:
+                pay_date_val = base_date
+
+            # paymentDatesAdjustments
+            pay_adjustments = pay_dates.payment_dates_adjustments
+            if pay_adjustments is not None:
+                adjusted_pay_date = self._adjuster.adjust_date(
+                    pay_date_val, pay_adjustments
+                )
+            else:
+                adjusted_pay_date = pay_date_val
 
             payment_periods.append(
                 PaymentCalculationPeriod(
