@@ -74,6 +74,33 @@ class CalculationPeriodScheduler:
         dates.append(end_date)
         return dates
 
+    def _generate_unadjusted_dates_backward(
+        self,
+        start_date: date,
+        end_date: date,
+        multiplier: int,
+        period: str,
+        roll_convention: str,
+    ) -> List[date]:
+        """後退的に unadjusted な計算期日のリストを生成します。"""
+        dates = [end_date]
+        months_to_subtract = multiplier
+        if period == "Y":
+            months_to_subtract *= 12
+
+        i = 1
+        while True:
+            next_date = self._add_months(
+                end_date, -i * months_to_subtract, roll_convention
+            )
+            if next_date <= start_date:
+                break
+            dates.append(next_date)
+            i += 1
+
+        dates.append(start_date)
+        return sorted(list(set(dates)))
+
     def generate_periods(self, stream: InterestRateStream) -> List[CalculationPeriod]:
         """InterestRateStream パラメータから CalculationPeriod スケジュールを展開します。
 
@@ -100,13 +127,44 @@ class CalculationPeriodScheduler:
         freq = calc_dates.calculation_period_frequency
         roll_conv = freq.roll_convention.value
 
-        unadjusted_dates = self._generate_unadjusted_dates(
-            effective_date_val,
-            termination_date_val,
-            freq.period_multiplier,
-            freq.period.value,
-            roll_conv,
-        )
+        # スタブ日付の取得
+        first_regular = None
+        if calc_dates.first_regular_period_start_date is not None:
+            first_regular = calc_dates.first_regular_period_start_date.to_date()
+
+        last_regular = None
+        if calc_dates.last_regular_period_end_date is not None:
+            last_regular = calc_dates.last_regular_period_end_date.to_date()
+
+        # レギュラー期間の基準日
+        reg_start = first_regular if first_regular is not None else effective_date_val
+        reg_end = last_regular if last_regular is not None else termination_date_val
+
+        # レギュラー期間の日付生成
+        if last_regular is not None:
+            reg_dates = self._generate_unadjusted_dates_backward(
+                reg_start,
+                reg_end,
+                freq.period_multiplier,
+                freq.period.value,
+                roll_conv,
+            )
+        else:
+            reg_dates = self._generate_unadjusted_dates(
+                reg_start,
+                reg_end,
+                freq.period_multiplier,
+                freq.period.value,
+                roll_conv,
+            )
+
+        # 全体の日付リストを作成
+        unadjusted_dates = [effective_date_val]
+        for d in reg_dates:
+            if d != effective_date_val and d != termination_date_val:
+                unadjusted_dates.append(d)
+        unadjusted_dates.append(termination_date_val)
+        unadjusted_dates = sorted(list(set(unadjusted_dates)))
 
         # 計算期間日付の調整ルール
         calc_adjustments = calc_dates.calculation_period_dates_adjustments
@@ -156,6 +214,33 @@ class CalculationPeriodScheduler:
                 astart, aend, stream
             )
 
+            # スタブ期間の判定と解決
+            is_initial_stub = first_regular is not None and ustart < first_regular
+            is_final_stub = last_regular is not None and uend > last_regular
+
+            stub_info = None
+            if (
+                is_initial_stub or is_final_stub
+            ) and stream.stub_calculation_period_amount is not None:
+                stub_amount_info = stream.stub_calculation_period_amount
+                if is_initial_stub and stub_amount_info.initial_stub is not None:
+                    stub_info = stub_amount_info.initial_stub
+                elif is_final_stub and stub_amount_info.final_stub is not None:
+                    stub_info = stub_amount_info.final_stub
+
+            period_fixed_rate = fixed_rate
+            period_floating_rate_def = floating_rate_def
+            period_stub_amount = None
+
+            if stub_info is not None:
+                if stub_info.stub_rate is not None:
+                    period_fixed_rate = stub_info.stub_rate
+                    period_floating_rate_def = None
+                elif stub_info.stub_amount is not None:
+                    period_fixed_rate = None
+                    period_floating_rate_def = None
+                    period_stub_amount = stub_info.stub_amount
+
             # FxLinkedNotionalAmountの構築
             fx_linked_notional_amount = None
             if fx_linked_notional_schedule is not None:
@@ -194,9 +279,11 @@ class CalculationPeriodScheduler:
                 notional_amount=notional,
                 fx_linked_notional_amount=fx_linked_notional_amount,
                 day_count_year_fraction=year_fraction,
-                fixed_rate=fixed_rate,
-                floating_rate_definition=floating_rate_def,
+                fixed_rate=period_fixed_rate,
+                floating_rate_definition=period_floating_rate_def,
             )
+            if period_stub_amount is not None:
+                calc_period._stub_amount = period_stub_amount
             calc_periods.append(calc_period)
 
         return calc_periods

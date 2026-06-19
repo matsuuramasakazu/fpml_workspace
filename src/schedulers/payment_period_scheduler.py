@@ -73,6 +73,15 @@ class PaymentPeriodScheduler:
             else:
                 adjusted_pay_date = pay_date_val
 
+            # stub_amount のチェック
+            fixed_pay_amount = None
+            calculation_period_group = group
+            for calc in group:
+                if hasattr(calc, "_stub_amount") and calc._stub_amount is not None:
+                    fixed_pay_amount = calc._stub_amount.amount
+                    calculation_period_group = []
+                    break
+
             payment_periods.append(
                 PaymentCalculationPeriod(
                     unadjusted_payment_date=unadjusted_pay_date,
@@ -81,7 +90,8 @@ class PaymentPeriodScheduler:
                         adjusted_pay_date.month,
                         adjusted_pay_date.day,
                     ),
-                    calculation_period=group,
+                    calculation_period=calculation_period_group,
+                    fixed_payment_amount=fixed_pay_amount,
                 )
             )
 
