@@ -3,11 +3,13 @@ from decimal import Decimal
 from pathlib import Path
 
 from xsdata.formats.dataclass.parsers import XmlParser
+from xsdata.models.datatype import XmlDate as ModelXmlDate
 
 from fpml.confirmation import DataDocument
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.calculation_period_scheduler import CalculationPeriodScheduler
 from src.schedulers.reference_resolver import ReferenceResolver
+from src.schedulers.swap_stream_scheduler import SwapStreamScheduler
 
 
 def test_generate_periods_initial_stub_interpolation():
@@ -448,3 +450,67 @@ def test_generate_periods_floating_spread_step_schedule():
 
     # 10期目 (1999-06-14 to 1999-12-14) -> 0.003
     assert periods[9].floating_rate_definition.spread == Decimal("0.003")
+
+
+def test_compounding_schedule_with_first_compounding_period_end_date():
+    """Test CalculationPeriodScheduler & SwapStreamScheduler for compounding swap with firstCompoundingPeriodEndDate."""
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex03-compound-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    floating_stream = doc.trade[0].swap.swap_stream[0]
+    calc_dates = floating_stream.calculation_period_dates
+
+    # firstCompoundingPeriodEndDate を設定 (2000-06-27)
+    calc_dates.first_compounding_period_end_date = ModelXmlDate(2000, 6, 27)
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+
+    # 1. CalculationPeriodScheduler の期日生成テスト
+    scheduler = CalculationPeriodScheduler(calendar, resolver)
+    periods = scheduler.generate_periods(floating_stream)
+
+    # 期待される計算期間の数: 9期
+    assert len(periods) == 9
+
+    # C1: 2000-04-27 to 2000-06-27 (unadjusted)
+    assert periods[0].unadjusted_start_date.to_date() == date(2000, 4, 27)
+    assert periods[0].unadjusted_end_date.to_date() == date(2000, 6, 27)
+
+    # C2: 2000-06-27 to 2000-09-27
+    assert periods[1].unadjusted_start_date.to_date() == date(2000, 6, 27)
+    assert periods[1].unadjusted_end_date.to_date() == date(2000, 9, 27)
+
+    # 2. SwapStreamScheduler (PaymentPeriodScheduler) の集約テスト
+    stream_scheduler = SwapStreamScheduler(calendar, resolver)
+    payment_periods = stream_scheduler.generate_payment_periods(floating_stream)
+
+    # 期待される支払期間の数: 5期
+    assert len(payment_periods) == 5
+
+    # P1 unadjusted end = 2000-06-27
+    # P1 calculation periods: C1 (1期のみ)
+    assert len(payment_periods[0].calculation_period) == 1
+    assert payment_periods[0].calculation_period[
+        0
+    ].unadjusted_start_date.to_date() == date(2000, 4, 27)
+    assert payment_periods[0].calculation_period[
+        0
+    ].unadjusted_end_date.to_date() == date(2000, 6, 27)
+
+    # P2 unadjusted end = 2000-12-27
+    # P2 calculation periods: C2, C3 (2期)
+    assert len(payment_periods[1].calculation_period) == 2
+    assert payment_periods[1].calculation_period[
+        0
+    ].unadjusted_start_date.to_date() == date(2000, 6, 27)
+    assert payment_periods[1].calculation_period[
+        1
+    ].unadjusted_end_date.to_date() == date(2000, 12, 27)

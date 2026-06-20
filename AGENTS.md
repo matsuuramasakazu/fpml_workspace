@@ -26,6 +26,7 @@ Your answers must always be grounded in the resources within this workspace.
 - You can proactively use `rg` (ripgrep) in the terminal for fast code and file searching.
 - When practicing TDD (Test-Driven Development), do not rely solely on high-level E2E integration tests. You must always add unit test cases specifically targeting the public interfaces of any newly created or modified lower-level classes/modules (e.g., in `tests/schedulers/test_*.py`).
 - In the validation section of your implementation plans (`implementation_plan.md`), explicitly list which classes will be modified and describe the corresponding unit test cases you plan to add.
+- When generating temporary XML files or execution outputs for manual verification, do NOT place them in the workspace root. Always output them to the `tests/output/` directory.
 
 ## Agent skills
 

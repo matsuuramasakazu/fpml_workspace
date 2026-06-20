@@ -455,3 +455,71 @@ def test_pipeline_arrears_stepup_fee_swap():
         # 4期目 (2001-10-27 から 2002-04-27) -> 6.5% (0.065)
         p4_fixed = fixed_stream.cashflows.payment_calculation_period[3]
         assert p4_fixed.calculation_period[0].fixed_rate == Decimal("0.065")
+
+
+def test_pipeline_compounding_swap_ex03():
+    """E2E test to verify compounding swap cashflow expansion using ird-ex03."""
+    from datetime import date
+    from decimal import Decimal
+
+    from xsdata.formats.dataclass.parsers import XmlParser
+
+    from fpml.confirmation import DataDocument
+
+    input_path = (
+        Path(__file__).parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex03-compound-swap.xml"
+    )
+    assert input_path.exists(), f"Input file not found: {input_path}"
+
+    config_dir = Path(__file__).parent.parent / "config"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_file = Path(tmpdir) / "output_compound_ex03.xml"
+
+        result = CashflowExpander.expand_cashflows(
+            str(input_path), str(output_file), str(config_dir)
+        )
+
+        assert result is True
+        assert output_file.exists()
+
+        parser = XmlParser()
+        doc = parser.from_path(output_file, DataDocument)
+
+        swap = doc.trade[0].swap
+        assert len(swap.swap_stream) == 2
+
+        # 最初のストリーム: USD 浮動レグ (Compounding)
+        floating_stream = swap.swap_stream[0]
+        assert floating_stream.cashflows is not None
+        assert floating_stream.cashflows.cashflows_match_parameters is True
+
+        # 2年間、6ヶ月ごと支払 = 4支払期
+        periods = floating_stream.cashflows.payment_calculation_period
+        assert len(periods) == 4
+
+        # 各支払期に 2つの計算期間が含まれていること (計8期)
+        # P1: 2000-04-27 to 2000-10-27 (C1: 04-27 to 07-27, C2: 07-27 to 10-27)
+        p1 = periods[0]
+        assert p1.adjusted_payment_date.to_date() == date(2000, 11, 3)
+        assert len(p1.calculation_period) == 2
+
+        c1 = p1.calculation_period[0]
+        assert c1.adjusted_start_date.to_date() == date(2000, 4, 27)
+        assert c1.adjusted_end_date.to_date() == date(2000, 7, 27)
+
+        c2 = p1.calculation_period[1]
+        assert c2.adjusted_start_date.to_date() == date(2000, 7, 27)
+        assert c2.adjusted_end_date.to_date() == date(2000, 10, 27)
+
+        # 2番目のストリーム: USD 固定レグ
+        fixed_stream = swap.swap_stream[1]
+        assert fixed_stream.cashflows is not None
+        # 6M ごとで2年間 = 4期
+        fixed_periods = fixed_stream.cashflows.payment_calculation_period
+        assert len(fixed_periods) == 4
+        assert fixed_periods[0].calculation_period[0].fixed_rate == Decimal("0.0585")

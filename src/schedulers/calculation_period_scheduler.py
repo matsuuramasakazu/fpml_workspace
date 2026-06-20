@@ -179,6 +179,8 @@ class CalculationPeriodScheduler:
         first_regular = None
         if calc_dates.first_regular_period_start_date is not None:
             first_regular = calc_dates.first_regular_period_start_date.to_date()
+        elif calc_dates.first_compounding_period_end_date is not None:
+            first_regular = calc_dates.first_compounding_period_end_date.to_date()
 
         last_regular = None
         if calc_dates.last_regular_period_end_date is not None:
@@ -241,7 +243,9 @@ class CalculationPeriodScheduler:
             aend = adjusted_dates[i + 1]
 
             num_days = (aend - astart).days
-            year_fraction = day_count_calc.calculate_year_fraction(astart, aend)
+            year_fraction = round(
+                day_count_calc.calculate_year_fraction(astart, aend), 12
+            )
 
             # 想定元本の解決
             notional = self.resolve_notional(calc_params, ustart)

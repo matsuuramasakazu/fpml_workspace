@@ -58,10 +58,16 @@ class CashflowExpander:
         config = SerializerConfig(indent="  ")
         serializer = XmlSerializer(config=config)
 
+        # 名前空間プレフィックスなし（デフォルト名前空間）で出力するためのマップ
+        ns_map = {
+            "": "http://www.fpml.org/FpML-5/confirmation",
+            "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        }
+
         # 出力先ディレクトリの確保
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(output_path, "w", encoding="utf-8") as f:
-            serializer.write(f, data_document)
+            serializer.write(f, data_document, ns_map=ns_map)
 
         return True
