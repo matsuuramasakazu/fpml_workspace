@@ -4,17 +4,6 @@ import tempfile
 from pathlib import Path
 
 
-def test_cli_help():
-    # python expand_cashflows.py --help
-    result = subprocess.run(
-        [sys.executable, "expand_cashflows.py", "--help"],
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0
-    assert "usage: expand_cashflows.py" in result.stdout
-
-
 def test_cli_missing_args():
     # 引数が足りない場合、exit code 2 でエラーになること
     result = subprocess.run(

@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from decimal import Decimal
 
 from xsdata.models.datatype import XmlDate
 
@@ -25,8 +26,42 @@ class FixingScheduler:
         self._resolver = resolver
         self._adjuster = DateAdjuster(calendar, resolver)
 
+    def _resolve_schedule_value(
+        self, schedule_or_list, ref_date: date
+    ) -> Decimal | None:
+        """指定された基準日（ref_date）時点のスケジュール値を解決します。"""
+        if not schedule_or_list:
+            return None
+
+        if isinstance(schedule_or_list, list):
+            if len(schedule_or_list) == 0:
+                return None
+            schedule = schedule_or_list[0]
+        else:
+            schedule = schedule_or_list
+
+        initial_value = schedule.initial_value
+        steps = getattr(schedule, "step", [])
+        if not steps:
+            return initial_value
+
+        sorted_steps = sorted(steps, key=lambda s: s.step_date.to_date())
+
+        resolved_value = initial_value
+        for step in sorted_steps:
+            if step.step_date.to_date() <= ref_date:
+                resolved_value = step.step_value
+            else:
+                break
+
+        return resolved_value
+
     def calculate_fixing(
-        self, adjusted_start: date, adjusted_end: date, stream: InterestRateStream
+        self,
+        adjusted_start: date,
+        adjusted_end: date,
+        stream: InterestRateStream,
+        unadjusted_start: date | None = None,
     ) -> FloatingRateDefinition | None:
         """計算期間の調整日を基準に、Fixing日を算出して FloatingRateDefinition を生成します。
 
@@ -34,6 +69,7 @@ class FixingScheduler:
             adjusted_start: 計算期間の調整済開始日
             adjusted_end: 計算期間の調整済終了日
             stream: FpML の金利ストリーム情報
+            unadjusted_start: 計算期間の調整前開始日
 
         Returns:
             構築された FloatingRateDefinition、または浮動金利情報がない場合は None
@@ -44,26 +80,16 @@ class FixingScheduler:
         if floating_rate_calc is None:
             return None
 
-        # spread と multiplier
-        spread = None
-        if floating_rate_calc.spread_schedule:
-            if isinstance(floating_rate_calc.spread_schedule, list):
-                if len(floating_rate_calc.spread_schedule) > 0:
-                    spread = floating_rate_calc.spread_schedule[0].initial_value
-            else:
-                spread = floating_rate_calc.spread_schedule.initial_value
+        # 基準日の決定 (unadjusted_startが指定されていればそれを使用、なければadjusted_startを使用)
+        ref_date = unadjusted_start if unadjusted_start is not None else adjusted_start
 
-        multiplier = None
-        if floating_rate_calc.floating_rate_multiplier_schedule:
-            if isinstance(floating_rate_calc.floating_rate_multiplier_schedule, list):
-                if len(floating_rate_calc.floating_rate_multiplier_schedule) > 0:
-                    multiplier = floating_rate_calc.floating_rate_multiplier_schedule[
-                        0
-                    ].initial_value
-            else:
-                multiplier = (
-                    floating_rate_calc.floating_rate_multiplier_schedule.initial_value
-                )
+        # spread と multiplier
+        spread = self._resolve_schedule_value(
+            floating_rate_calc.spread_schedule, ref_date
+        )
+        multiplier = self._resolve_schedule_value(
+            floating_rate_calc.floating_rate_multiplier_schedule, ref_date
+        )
 
         # RFR (Modular Calculated Rate) の判定
         calculation_parameters = floating_rate_calc.calculation_parameters

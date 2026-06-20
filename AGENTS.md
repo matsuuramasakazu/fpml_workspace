@@ -26,9 +26,6 @@ Your answers must always be grounded in the resources within this workspace.
 - You can proactively use `rg` (ripgrep) in the terminal for fast code and file searching.
 - When practicing TDD (Test-Driven Development), do not rely solely on high-level E2E integration tests. You must always add unit test cases specifically targeting the public interfaces of any newly created or modified lower-level classes/modules (e.g., in `tests/schedulers/test_*.py`).
 - In the validation section of your implementation plans (`implementation_plan.md`), explicitly list which classes will be modified and describe the corresponding unit test cases you plan to add.
-- Break down implementation steps into smaller, vertical slices of RED-GREEN cycles per module instead of attempting to pass E2E tests in a single large step.
-
-
 
 ## Agent skills
 

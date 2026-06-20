@@ -9,6 +9,7 @@ from fpml.confirmation import (
     CalculationPeriod,
     FxLinkedNotionalAmount,
     InterestRateStream,
+    Schedule,
 )
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.date_adjuster import DateAdjuster
@@ -30,6 +31,30 @@ class CalculationPeriodScheduler:
         self._resolver = resolver
         self._adjuster = DateAdjuster(calendar, resolver)
         self._fixing_scheduler = FixingScheduler(calendar, resolver)
+
+    def _resolve_schedule_value(
+        self, schedule: Schedule | None, ref_date: date
+    ) -> Decimal | None:
+        """指定された基準日（ref_date）時点のスケジュール値を解決します。"""
+        if schedule is None:
+            return None
+
+        initial_value = schedule.initial_value
+        steps = getattr(schedule, "step", [])
+        if not steps:
+            return initial_value
+
+        # step_date でソート
+        sorted_steps = sorted(steps, key=lambda s: s.step_date.to_date())
+
+        resolved_value = initial_value
+        for step in sorted_steps:
+            if step.step_date.to_date() <= ref_date:
+                resolved_value = step.step_value
+            else:
+                break
+
+        return resolved_value
 
     def _add_months(self, start_date: date, months: int, roll_convention: str) -> date:
         """指定された月数だけ日付を進めます（ロールコンベンション考慮）。"""
@@ -122,22 +147,7 @@ class CalculationPeriodScheduler:
         if step_schedule is None:
             return None
 
-        initial_value = step_schedule.initial_value
-        steps = getattr(step_schedule, "step", [])
-        if not steps:
-            return initial_value
-
-        # step_date でソート
-        sorted_steps = sorted(steps, key=lambda s: s.step_date.to_date())
-
-        resolved_value = initial_value
-        for step in sorted_steps:
-            if step.step_date.to_date() <= ref_date:
-                resolved_value = step.step_value
-            else:
-                break
-
-        return resolved_value
+        return self._resolve_schedule_value(step_schedule, ref_date)
 
     def generate_periods(self, stream: InterestRateStream) -> List[CalculationPeriod]:
         """InterestRateStream パラメータから CalculationPeriod スケジュールを展開します。
@@ -221,9 +231,7 @@ class CalculationPeriodScheduler:
         fx_linked_notional_schedule = calc_params.fx_linked_notional_schedule
 
         # 固定利率（ある場合）
-        fixed_rate = None
-        if calc_params.fixed_rate_schedule is not None:
-            fixed_rate = calc_params.fixed_rate_schedule.initial_value
+        fixed_rate_schedule = calc_params.fixed_rate_schedule
 
         calc_periods = []
         for i in range(len(unadjusted_dates) - 1):
@@ -240,7 +248,7 @@ class CalculationPeriodScheduler:
 
             # 浮動金利パラメータ（ある場合）の取得
             floating_rate_def = self._fixing_scheduler.calculate_fixing(
-                astart, aend, stream
+                astart, aend, stream, ustart
             )
 
             # スタブ期間の判定と解決
@@ -257,7 +265,9 @@ class CalculationPeriodScheduler:
                 elif is_final_stub and stub_amount_info.final_stub is not None:
                     stub_info = stub_amount_info.final_stub
 
-            period_fixed_rate = fixed_rate
+            period_fixed_rate = self._resolve_schedule_value(
+                fixed_rate_schedule, ustart
+            )
             period_floating_rate_def = floating_rate_def
             period_stub_amount = None
 

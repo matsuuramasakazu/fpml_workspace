@@ -443,3 +443,15 @@ def test_pipeline_arrears_stepup_fee_swap():
         # 1期目 (2000-04-27 から 2000-10-27) -> rate は initialValue 6.0% (0.06)
         p1_fixed = fixed_stream.cashflows.payment_calculation_period[0]
         assert p1_fixed.calculation_period[0].fixed_rate == Decimal("0.06")
+
+        # 2期目 (2000-10-27 から 2001-04-27) -> 6.0% (0.06)
+        p2_fixed = fixed_stream.cashflows.payment_calculation_period[1]
+        assert p2_fixed.calculation_period[0].fixed_rate == Decimal("0.06")
+
+        # 3期目 (2001-04-27 から 2001-10-27) -> stepValue 6.5% (0.065) にステップアップ
+        p3_fixed = fixed_stream.cashflows.payment_calculation_period[2]
+        assert p3_fixed.calculation_period[0].fixed_rate == Decimal("0.065")
+
+        # 4期目 (2001-10-27 から 2002-04-27) -> 6.5% (0.065)
+        p4_fixed = fixed_stream.cashflows.payment_calculation_period[3]
+        assert p4_fixed.calculation_period[0].fixed_rate == Decimal("0.065")

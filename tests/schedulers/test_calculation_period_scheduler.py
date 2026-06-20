@@ -320,3 +320,131 @@ def test_generate_periods_reset_relative_to_none():
     obs1 = p1.floating_rate_definition.rate_observation[0]
     # デフォルトである CalculationPeriodStartDate 基準なので、開始日 1995-01-16 から算出される
     assert obs1.reset_date.to_date() == date(1995, 1, 16)
+
+
+def test_generate_periods_fixed_rate_step_schedule():
+    """Test CalculationPeriodScheduler for fixed rate step schedule resolution."""
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex02-stub-amort-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    # 固定レッグ（2番目のストリーム）を取得
+    fixed_stream = doc.trade[0].swap.swap_stream[1]
+    calc_params = fixed_stream.calculation_period_amount.calculation
+
+    # fixedRateSchedule を書き換え、ステップスケジュールを設定
+    from xsdata.models.datatype import XmlDate as ModelXmlDate
+
+    from fpml.confirmation import Schedule, Step
+
+    # 契約期間: 1995-01-16 から 1999-12-14
+    # 6M ごとで 10 期間
+    # initialValue = 0.05
+    # step 1: 1996-06-14 -> 0.055
+    # step 2: 1998-06-15 -> 0.060
+    calc_params.fixed_rate_schedule = Schedule(
+        initial_value=Decimal("0.05"),
+        step=[
+            Step(step_date=ModelXmlDate(1996, 6, 14), step_value=Decimal("0.055")),
+            Step(step_date=ModelXmlDate(1998, 6, 15), step_value=Decimal("0.060")),
+        ],
+    )
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+    scheduler = CalculationPeriodScheduler(calendar, resolver)
+
+    periods = scheduler.generate_periods(fixed_stream)
+
+    assert len(periods) == 5
+
+    # 1期目 (1995-01-16 to 1995-12-14) -> 0.05
+    assert periods[0].fixed_rate == Decimal("0.05")
+
+    # 2期目 (1995-12-14 to 1996-12-16) -> 0.05 (ステップ日は1996-06-14なので、2期目開始日の1995-12-14時点ではまだ適用されない)
+    assert periods[1].fixed_rate == Decimal("0.05")
+
+    # 3期目 (1996-12-16 to 1997-12-15) -> 0.055 (1996-06-14にステップした0.055が適用される)
+    assert periods[2].fixed_rate == Decimal("0.055")
+
+    # 4期目 (1997-12-15 to 1998-12-14) -> 0.055 (ステップ日は1998-06-15なので、4期目開始日の1997-12-15時点ではまだ適用されない)
+    assert periods[3].fixed_rate == Decimal("0.055")
+
+    # 5期目 (1998-12-14 to 1999-12-14) -> 0.060 (1998-06-15にステップした0.060が適用される)
+    assert periods[4].fixed_rate == Decimal("0.060")
+
+
+def test_generate_periods_floating_spread_step_schedule():
+    """Test CalculationPeriodScheduler for floating spread step schedule resolution."""
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex02-stub-amort-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    # 浮動レッグ（1番目のストリーム）を取得
+    floating_stream = doc.trade[0].swap.swap_stream[0]
+    floating_calc = (
+        floating_stream.calculation_period_amount.calculation.floating_rate_calculation
+    )
+
+    # spreadSchedule を書き換え、ステップスケジュールを設定
+    # 元々の ird-ex02 はスプレッドスケジュールがなく、LIBOR のみ
+    # ここで Schedule と Step を使って動的にスプレッドステップを設定する
+    from xsdata.models.datatype import XmlDate as ModelXmlDate
+
+    from fpml.confirmation import Schedule, Step
+
+    # 契約期間: 1995-01-16 から 1999-12-14
+    # 頻度 6M、初期スタブありで全体で 10 期間
+    # initialValue = 0.001 (10 bps)
+    # step 1: 1996-06-14 -> 0.002 (20 bps)
+    # step 2: 1998-06-15 -> 0.003 (30 bps)
+    floating_calc.spread_schedule = [
+        Schedule(
+            initial_value=Decimal("0.001"),
+            step=[
+                Step(step_date=ModelXmlDate(1996, 6, 14), step_value=Decimal("0.002")),
+                Step(step_date=ModelXmlDate(1998, 6, 15), step_value=Decimal("0.003")),
+            ],
+        )
+    ]
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+    scheduler = CalculationPeriodScheduler(calendar, resolver)
+
+    periods = scheduler.generate_periods(floating_stream)
+
+    assert len(periods) == 10
+
+    # 1期目 (1995-01-16 to 1995-06-14) -> 0.001
+    assert periods[0].floating_rate_definition.spread == Decimal("0.001")
+
+    # 3期目 (1995-12-14 to 1996-06-14) -> 0.001 (ステップ日は1996-06-14なので、3期目開始日1995-12-14時点ではまだ適用されない)
+    assert periods[2].floating_rate_definition.spread == Decimal("0.001")
+
+    # 4期目 (1996-06-14 to 1996-12-16) -> 0.002 (1996-06-14にステップ)
+    assert periods[3].floating_rate_definition.spread == Decimal("0.002")
+
+    # 7期目 (1997-12-15 to 1998-06-15) -> 0.002 (ステップ日は1998-06-15なので、7期目開始日1997-12-15時点ではまだ適用されない)
+    assert periods[6].floating_rate_definition.spread == Decimal("0.002")
+
+    # 8期目 (1998-06-14 to 1998-12-14) -> 0.002 (ステップ日は1998-06-15なので、8期目開始日1998-06-14時点ではまだ適用されない)
+    assert periods[7].floating_rate_definition.spread == Decimal("0.002")
+
+    # 9期目 (1998-12-14 to 1999-06-14) -> 0.003 (1998-06-15にステップした0.003が適用される)
+    assert periods[8].floating_rate_definition.spread == Decimal("0.003")
+
+    # 10期目 (1999-06-14 to 1999-12-14) -> 0.003
+    assert periods[9].floating_rate_definition.spread == Decimal("0.003")
