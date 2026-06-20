@@ -276,9 +276,10 @@ class CalculationPeriodScheduler:
                 # リセット日の特定（一般には `adjusted_start`）
                 reset_date_val = astart
                 if stream.reset_dates is not None:
+                    reset_rel = stream.reset_dates.reset_relative_to
                     if (
-                        stream.reset_dates.reset_relative_to.value
-                        != "CalculationPeriodStartDate"
+                        reset_rel is not None
+                        and reset_rel.value == "CalculationPeriodEndDate"
                     ):
                         reset_date_val = aend
 

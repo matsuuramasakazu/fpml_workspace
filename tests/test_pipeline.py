@@ -370,3 +370,76 @@ def test_pipeline_rfr_lookback_ex45():
         # Lookback 5営業日: 2021-08-16 の5営業日前 -> 2021-08-09
         assert obs1.adjusted_fixing_date.to_date() == date(2021, 8, 9)
         assert obs1.observation_weight == 1
+
+
+def test_pipeline_arrears_stepup_fee_swap():
+    """E2E test to verify Reset in Arrears swap cashflow expansion using ird-ex04."""
+    from datetime import date
+    from decimal import Decimal
+
+    from xsdata.formats.dataclass.parsers import XmlParser
+
+    from fpml.confirmation import DataDocument
+
+    input_path = (
+        Path(__file__).parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex04-arrears-stepup-fee-swap.xml"
+    )
+    assert input_path.exists(), f"Input file not found: {input_path}"
+
+    config_dir = Path(__file__).parent.parent / "config"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_file = Path(tmpdir) / "output_arrears_ex04.xml"
+
+        result = CashflowExpander.expand_cashflows(
+            str(input_path), str(output_file), str(config_dir)
+        )
+
+        assert result is True
+        assert output_file.exists()
+
+        parser = XmlParser()
+        doc = parser.from_path(output_file, DataDocument)
+
+        swap = doc.trade[0].swap
+        assert len(swap.swap_stream) == 2
+
+        # 1番目のストリーム: USD 浮動レグ (Reset in Arrears)
+        floating_stream = swap.swap_stream[0]
+        assert floating_stream.cashflows is not None
+        assert floating_stream.cashflows.cashflows_match_parameters is True
+
+        # 2年間、3ヶ月ごと = 8期
+        periods = floating_stream.cashflows.payment_calculation_period
+        assert len(periods) == 8
+
+        # 1期目 (2000-04-27 から 2000-07-27)
+        p1 = periods[0]
+        calc1 = p1.calculation_period[0]
+        assert calc1.adjusted_start_date.to_date() == date(2000, 4, 27)
+        assert calc1.adjusted_end_date.to_date() == date(2000, 7, 27)
+
+        floating_def = calc1.floating_rate_definition
+        assert floating_def is not None
+        assert len(floating_def.rate_observation) == 1
+        obs1 = floating_def.rate_observation[0]
+
+        # resetRelativeTo が CalculationPeriodEndDate のため、reset_date は期末日 (2000-07-27)
+        assert obs1.reset_date.to_date() == date(2000, 7, 27)
+        # Fixing は期末日の 2ロンドン営業日前 -> 2000-07-27 (木) の 2営業日前 -> 2000-07-25 (火)
+        assert obs1.adjusted_fixing_date.to_date() == date(2000, 7, 25)
+
+        # 2番目のストリーム: 固定レグ (Rate Step Schedule も適用されていること)
+        fixed_stream = swap.swap_stream[1]
+        assert fixed_stream.cashflows is not None
+        assert (
+            len(fixed_stream.cashflows.payment_calculation_period) == 4
+        )  # 6M ごとで2年間 = 4期
+
+        # 1期目 (2000-04-27 から 2000-10-27) -> rate は initialValue 6.0% (0.06)
+        p1_fixed = fixed_stream.cashflows.payment_calculation_period[0]
+        assert p1_fixed.calculation_period[0].fixed_rate == Decimal("0.06")

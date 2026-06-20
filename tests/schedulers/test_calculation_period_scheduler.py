@@ -243,3 +243,80 @@ def test_generate_periods_notional_amortization():
 
     # 10期目 (1999-06-14 to 1999-12-14) - 想定元本 10,000,000.00
     assert periods[9].notional_amount == Decimal("10000000.00")
+
+
+def test_generate_periods_reset_in_arrears():
+    """Test CalculationPeriodScheduler for Reset in Arrears (resetRelativeTo = CalculationPeriodEndDate)."""
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex02-stub-amort-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    floating_stream = doc.trade[0].swap.swap_stream[0]
+
+    # resetRelativeTo を CalculationPeriodEndDate に変更
+    from fpml.confirmation import ResetRelativeToEnum
+
+    floating_stream.reset_dates.reset_relative_to = (
+        ResetRelativeToEnum.CALCULATION_PERIOD_END_DATE
+    )
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+    scheduler = CalculationPeriodScheduler(calendar, resolver)
+
+    periods = scheduler.generate_periods(floating_stream)
+
+    assert len(periods) == 10
+
+    # 1期目 (1995-01-16 to 1995-06-14)
+    # 期末日は 1995-06-14 (水)
+    # Fixingは 2営業日前 (GBLO) -> 1995-06-12 (月)
+    p1 = periods[0]
+    assert p1.adjusted_start_date.to_date() == date(1995, 1, 16)
+    assert p1.adjusted_end_date.to_date() == date(1995, 6, 14)
+
+    floating_def = p1.floating_rate_definition
+    assert floating_def is not None
+    assert len(floating_def.rate_observation) == 1
+    obs1 = floating_def.rate_observation[0]
+
+    # resetDate は期末日 (adjusted_end_date)
+    assert obs1.reset_date.to_date() == date(1995, 6, 14)
+    # adjusted_fixing_date も期末日から2営業日前
+    assert obs1.adjusted_fixing_date.to_date() == date(1995, 6, 12)
+
+
+def test_generate_periods_reset_relative_to_none():
+    """Test CalculationPeriodScheduler when resetRelativeTo is None (defaulting to CalculationPeriodStartDate)."""
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex02-stub-amort-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    floating_stream = doc.trade[0].swap.swap_stream[0]
+
+    # reset_relative_to を None に設定
+    floating_stream.reset_dates.reset_relative_to = None
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+    scheduler = CalculationPeriodScheduler(calendar, resolver)
+
+    periods = scheduler.generate_periods(floating_stream)
+
+    assert len(periods) == 10
+    p1 = periods[0]
+    obs1 = p1.floating_rate_definition.rate_observation[0]
+    # デフォルトである CalculationPeriodStartDate 基準なので、開始日 1995-01-16 から算出される
+    assert obs1.reset_date.to_date() == date(1995, 1, 16)

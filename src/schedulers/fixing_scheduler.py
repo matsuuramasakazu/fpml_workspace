@@ -201,10 +201,11 @@ class FixingScheduler:
 
         reset_dates = stream.reset_dates
 
-        # resetRelativeToがStartDateなら計算期間開始日を基準にする
+        # resetRelativeToがStartDateまたはNoneなら計算期間開始日を基準にする
         reset_date_val = adjusted_start
-        if reset_dates.reset_relative_to.value != "CalculationPeriodStartDate":
-            reset_date_val = adjusted_end  # フォールバック
+        reset_rel = reset_dates.reset_relative_to
+        if reset_rel is not None and reset_rel.value == "CalculationPeriodEndDate":
+            reset_date_val = adjusted_end
 
         # Fixing日の算出
         fixing_dates = reset_dates.fixing_dates
