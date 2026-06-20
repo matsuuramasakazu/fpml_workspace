@@ -1,6 +1,6 @@
-import calendar as py_calendar
 from datetime import date
-from typing import List
+from decimal import Decimal
+from typing import List, Tuple
 
 from xsdata.models.datatype import XmlDate
 
@@ -11,6 +11,7 @@ from fpml.confirmation import (
 )
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.date_adjuster import DateAdjuster
+from src.schedulers.period_date_generator import PeriodDateGenerator
 from src.schedulers.reference_resolver import ReferenceResolver
 
 
@@ -25,77 +26,6 @@ class PaymentPeriodScheduler:
         """
         self._adjuster = DateAdjuster(calendar, resolver)
 
-    def _add_months(self, start_date: date, months: int, roll_convention: str) -> date:
-        """指定された月数だけ日付を進めます（ロールコンベンション考慮）。"""
-        y = start_date.year + (start_date.month + months - 1) // 12
-        m = (start_date.month + months - 1) % 12 + 1
-
-        last_day = py_calendar.monthrange(y, m)[1]
-
-        if roll_convention == "EOM" or roll_convention == "31":
-            return date(y, m, last_day)
-
-        try:
-            day_num = int(roll_convention)
-            if 1 <= day_num <= 30:
-                return date(y, m, min(day_num, last_day))
-        except ValueError:
-            pass
-
-        return date(y, m, min(start_date.day, last_day))
-
-    def _generate_unadjusted_dates(
-        self,
-        start_date: date,
-        end_date: date,
-        multiplier: int,
-        period: str,
-        roll_convention: str,
-    ) -> List[date]:
-        """unadjusted な計算期日のリストを生成します。"""
-        dates = [start_date]
-        months_to_add = multiplier
-        if period == "Y":
-            months_to_add *= 12
-
-        i = 1
-        while True:
-            next_date = self._add_months(start_date, i * months_to_add, roll_convention)
-            if next_date >= end_date:
-                break
-            dates.append(next_date)
-            i += 1
-
-        dates.append(end_date)
-        return dates
-
-    def _generate_unadjusted_dates_backward(
-        self,
-        start_date: date,
-        end_date: date,
-        multiplier: int,
-        period: str,
-        roll_convention: str,
-    ) -> List[date]:
-        """後退的に unadjusted な計算期日のリストを生成します。"""
-        dates = [end_date]
-        months_to_subtract = multiplier
-        if period == "Y":
-            months_to_subtract *= 12
-
-        i = 1
-        while True:
-            next_date = self._add_months(
-                end_date, -i * months_to_subtract, roll_convention
-            )
-            if next_date <= start_date:
-                break
-            dates.append(next_date)
-            i += 1
-
-        dates.append(start_date)
-        return sorted(list(set(dates)))
-
     def aggregate_periods(
         self, calc_periods: List[CalculationPeriod], stream: InterestRateStream
     ) -> List[PaymentCalculationPeriod]:
@@ -109,6 +39,15 @@ class PaymentPeriodScheduler:
             集約・調整された PaymentCalculationPeriod オブジェクトのリスト
         """
         # 1. 支払 unadjusted dates 系列の生成
+        payment_unadjusted_targets = self._generate_payment_targets(stream)
+
+        # 2. 計算期間を支払ターゲットに集約
+        return self._aggregate_to_payment_periods(
+            calc_periods, payment_unadjusted_targets, stream
+        )
+
+    def _generate_payment_targets(self, stream: InterestRateStream) -> List[date]:
+        """支払頻度とロール慣行に従って、集約ターゲットとなる未調整の支払期日系列を生成します。"""
         calc_dates = stream.calculation_period_dates
         effective_date_val = calc_dates.effective_date.unadjusted_date.value.to_date()
         termination_date_val = (
@@ -131,8 +70,9 @@ class PaymentPeriodScheduler:
         reg_start = first_regular if first_regular is not None else effective_date_val
         reg_end = last_regular if last_regular is not None else termination_date_val
 
+        # 支払期間の日付系列生成 (PeriodDateGenerator に委譲)
         if last_regular is not None:
-            reg_dates = self._generate_unadjusted_dates_backward(
+            reg_dates = PeriodDateGenerator.generate_unadjusted_dates_backward(
                 reg_start,
                 reg_end,
                 pay_freq.period_multiplier,
@@ -140,7 +80,7 @@ class PaymentPeriodScheduler:
                 roll_conv,
             )
         else:
-            reg_dates = self._generate_unadjusted_dates(
+            reg_dates = PeriodDateGenerator.generate_unadjusted_dates(
                 reg_start,
                 reg_end,
                 pay_freq.period_multiplier,
@@ -148,15 +88,21 @@ class PaymentPeriodScheduler:
                 roll_conv,
             )
 
-        # 支払 unadjusted dates (effective_date は除外し、ターゲット期日とする)
+        # 支払ターゲット期日を抽出 (開始日は除外し、各期間の終了ターゲットとする)
         payment_unadjusted_targets = []
         for d in reg_dates:
             if d != effective_date_val and d != termination_date_val:
                 payment_unadjusted_targets.append(d)
         payment_unadjusted_targets.append(termination_date_val)
-        payment_unadjusted_targets = sorted(list(set(payment_unadjusted_targets)))
+        return sorted(list(set(payment_unadjusted_targets)))
 
-        # 2. 計算期間を支払ターゲットに集約
+    def _aggregate_to_payment_periods(
+        self,
+        calc_periods: List[CalculationPeriod],
+        payment_unadjusted_targets: List[date],
+        stream: InterestRateStream,
+    ) -> List[PaymentCalculationPeriod]:
+        """計算期間のリストを支払ターゲット期日系列に従って集約・グループ化します。"""
         payment_periods = []
         current_group = []
         target_idx = 0
@@ -165,98 +111,84 @@ class PaymentPeriodScheduler:
             current_group.append(calc)
             calc_end = calc.unadjusted_end_date.to_date()
 
-            # もし現在の計算期間の unadjusted_end_date が現在の支払ターゲット期日に達した場合
+            # 計算期間の unadjusted_end_date が支払ターゲット期日に達した場合
             if (
                 target_idx < len(payment_unadjusted_targets)
                 and calc_end >= payment_unadjusted_targets[target_idx]
             ):
-                last_calc = current_group[-1]
-                unadjusted_pay_date = last_calc.unadjusted_end_date
-
-                # paymentDaysOffset の考慮
-                base_date = last_calc.adjusted_end_date.to_date()
-                pay_dates = stream.payment_dates
-                if pay_dates.payment_days_offset is not None:
-                    pay_date_val = self._adjuster.resolve_relative_date_offset(
-                        base_date, pay_dates.payment_days_offset
-                    )
-                else:
-                    pay_date_val = base_date
-
-                # paymentDatesAdjustments
-                pay_adjustments = pay_dates.payment_dates_adjustments
-                if pay_adjustments is not None:
-                    adjusted_pay_date = self._adjuster.adjust_date(
-                        pay_date_val, pay_adjustments
-                    )
-                else:
-                    adjusted_pay_date = pay_date_val
-
-                # stub_amount のチェック
-                fixed_pay_amount = None
-                calculation_period_group = current_group
-                for c in current_group:
-                    if hasattr(c, "_stub_amount") and c._stub_amount is not None:
-                        fixed_pay_amount = c._stub_amount.amount
-                        calculation_period_group = []
-                        break
-
                 payment_periods.append(
-                    PaymentCalculationPeriod(
-                        unadjusted_payment_date=unadjusted_pay_date,
-                        adjusted_payment_date=XmlDate(
-                            adjusted_pay_date.year,
-                            adjusted_pay_date.month,
-                            adjusted_pay_date.day,
-                        ),
-                        calculation_period=calculation_period_group,
-                        fixed_payment_amount=fixed_pay_amount,
-                    )
+                    self._build_payment_period(current_group, stream)
                 )
-
                 current_group = []
                 target_idx += 1
 
-        # 残りがあれば（通常はターゲットと完全同期するはずだが安全のため）
+        # 残りがある場合のフォールバック（通常はターゲットと完全同期するため空のはず）
         if current_group:
-            last_calc = current_group[-1]
-            unadjusted_pay_date = last_calc.unadjusted_end_date
-            base_date = last_calc.adjusted_end_date.to_date()
-            pay_dates = stream.payment_dates
-            if pay_dates.payment_days_offset is not None:
-                pay_date_val = self._adjuster.resolve_relative_date_offset(
-                    base_date, pay_dates.payment_days_offset
-                )
-            else:
-                pay_date_val = base_date
-
-            pay_adjustments = pay_dates.payment_dates_adjustments
-            if pay_adjustments is not None:
-                adjusted_pay_date = self._adjuster.adjust_date(
-                    pay_date_val, pay_adjustments
-                )
-            else:
-                adjusted_pay_date = pay_date_val
-
-            fixed_pay_amount = None
-            calculation_period_group = current_group
-            for c in current_group:
-                if hasattr(c, "_stub_amount") and c._stub_amount is not None:
-                    fixed_pay_amount = c._stub_amount.amount
-                    calculation_period_group = []
-                    break
-
-            payment_periods.append(
-                PaymentCalculationPeriod(
-                    unadjusted_payment_date=unadjusted_pay_date,
-                    adjusted_payment_date=XmlDate(
-                        adjusted_pay_date.year,
-                        adjusted_pay_date.month,
-                        adjusted_pay_date.day,
-                    ),
-                    calculation_period=calculation_period_group,
-                    fixed_payment_amount=fixed_pay_amount,
-                )
-            )
+            payment_periods.append(self._build_payment_period(current_group, stream))
 
         return payment_periods
+
+    def _build_payment_period(
+        self, current_group: List[CalculationPeriod], stream: InterestRateStream
+    ) -> PaymentCalculationPeriod:
+        """グループ化された計算期間リストから単一の支払期間（PaymentCalculationPeriod）をビルドします。"""
+        last_calc = current_group[-1]
+        unadjusted_pay_date = last_calc.unadjusted_end_date
+
+        # 支払日の休日調整
+        adjusted_pay_date = self._calculate_payment_date(last_calc, stream)
+
+        # 固定支払金額（スタブ金額）の抽出
+        fixed_pay_amount, calculation_period_group = self._extract_fixed_payment_amount(
+            current_group
+        )
+
+        return PaymentCalculationPeriod(
+            unadjusted_payment_date=unadjusted_pay_date,
+            adjusted_payment_date=XmlDate(
+                adjusted_pay_date.year,
+                adjusted_pay_date.month,
+                adjusted_pay_date.day,
+            ),
+            calculation_period=calculation_period_group,
+            fixed_payment_amount=fixed_pay_amount,
+        )
+
+    def _calculate_payment_date(
+        self, last_calc: CalculationPeriod, stream: InterestRateStream
+    ) -> date:
+        """支払オフセットおよび休日調整を適用して支払日を算出します。"""
+        base_date = last_calc.adjusted_end_date.to_date()
+        pay_dates = stream.payment_dates
+
+        # paymentDaysOffset の考慮
+        if pay_dates.payment_days_offset is not None:
+            pay_date_val = self._adjuster.resolve_relative_date_offset(
+                base_date, pay_dates.payment_days_offset
+            )
+        else:
+            pay_date_val = base_date
+
+        # paymentDatesAdjustments の考慮
+        pay_adjustments = pay_dates.payment_dates_adjustments
+        if pay_adjustments is not None:
+            adjusted_pay_date = self._adjuster.adjust_date(
+                pay_date_val, pay_adjustments
+            )
+        else:
+            adjusted_pay_date = pay_date_val
+
+        return adjusted_pay_date
+
+    def _extract_fixed_payment_amount(
+        self, current_group: List[CalculationPeriod]
+    ) -> Tuple[Decimal | None, List[CalculationPeriod]]:
+        """計算期間グループ内からスタブなどの固定支払額（Money）が設定されているものを抽出し、支払対象の計算期間グループと共に返します。"""
+        fixed_pay_amount = None
+        calculation_period_group = current_group
+        for c in current_group:
+            if hasattr(c, "_stub_amount") and c._stub_amount is not None:
+                fixed_pay_amount = c._stub_amount.amount
+                calculation_period_group = []
+                break
+        return fixed_pay_amount, calculation_period_group
