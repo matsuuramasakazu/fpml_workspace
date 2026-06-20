@@ -95,6 +95,60 @@ class SwapStreamScheduler:
                 )
             )
 
+        # 中間元本交換 (Intermediate Exchange)
+        if stream.principal_exchanges.intermediate_exchange:
+            if fx_linked_notional_schedule is None:
+                notional_schedule = calc_params.notional_schedule
+                if notional_schedule is not None:
+                    step_schedule = None
+                    if notional_schedule.notional_step_schedule is not None:
+                        step_schedule = notional_schedule.notional_step_schedule
+                    elif (
+                        notional_schedule.notional_step_parameters_reference is not None
+                    ):
+                        step_schedule = self._resolver.resolve(
+                            notional_schedule.notional_step_parameters_reference
+                        )
+
+                    if step_schedule is not None:
+                        initial_value = step_schedule.initial_value
+                        steps = getattr(step_schedule, "step", [])
+                        if steps:
+                            sorted_steps = sorted(
+                                steps, key=lambda s: s.step_date.to_date()
+                            )
+                            prev_value = initial_value
+                            for step in sorted_steps:
+                                step_date = step.step_date.to_date()
+                                # 休日調整の適用
+                                pay_adjustments = None
+                                if stream.payment_dates is not None:
+                                    pay_adjustments = (
+                                        stream.payment_dates.payment_dates_adjustments
+                                    )
+
+                                adjusted_date = self._adjuster.adjust_date(
+                                    step_date, pay_adjustments
+                                )
+                                step_value = step.step_value
+                                diff_amount = prev_value - step_value
+                                exchanges.append(
+                                    PrincipalExchange(
+                                        unadjusted_principal_exchange_date=XmlDate(
+                                            step_date.year,
+                                            step_date.month,
+                                            step_date.day,
+                                        ),
+                                        adjusted_principal_exchange_date=XmlDate(
+                                            adjusted_date.year,
+                                            adjusted_date.month,
+                                            adjusted_date.day,
+                                        ),
+                                        principal_exchange_amount=diff_amount,
+                                    )
+                                )
+                                prev_value = step_value
+
         # 最終元本交換 (Final Exchange)
         if stream.principal_exchanges.final_exchange:
             term_date = calc_dates.termination_date
@@ -122,4 +176,6 @@ class SwapStreamScheduler:
                 )
             )
 
+        # 日付順（unadjusted）にソートして返却
+        exchanges.sort(key=lambda x: x.unadjusted_principal_exchange_date.to_date())
         return exchanges
