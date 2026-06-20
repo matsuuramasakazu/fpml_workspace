@@ -195,3 +195,51 @@ def test_generate_periods_final_stub():
     # final_stub の stub_rate (4.5%) が適用されていること
     assert p10.fixed_rate == Decimal("0.045")
     assert p10.floating_rate_definition is None
+
+
+def test_generate_periods_notional_amortization():
+    """Test CalculationPeriodScheduler for notional amortization using ird-ex02."""
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex02-stub-amort-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    # 浮動レッグストリームを取得
+    floating_stream = doc.trade[0].swap.swap_stream[0]
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+    scheduler = CalculationPeriodScheduler(calendar, resolver)
+
+    periods = scheduler.generate_periods(floating_stream)
+
+    assert len(periods) == 10
+
+    # 1期目 (1995-01-16 to 1995-06-14) - 初期想定元本 50,000,000.00
+    assert periods[0].notional_amount == Decimal("50000000.00")
+
+    # 2期目 (1995-06-14 to 1995-12-14) - 想定元本 50,000,000.00
+    assert periods[1].notional_amount == Decimal("50000000.00")
+
+    # 3期目 (1995-12-14 to 1996-06-14) - 元本削減ステップ反映 (1995-12-14に40,000,000.00へ)
+    assert periods[2].notional_amount == Decimal("40000000.00")
+
+    # 4期目 (1996-06-14 to 1996-12-16) - 想定元本 40,000,000.00
+    assert periods[3].notional_amount == Decimal("40000000.00")
+
+    # 5期目 (1996-12-16 to 1997-06-16) - 元本削減ステップ反映 (1996-12-14に30,000,000.00へ)
+    assert periods[4].notional_amount == Decimal("30000000.00")
+
+    # 7期目 (1997-12-15 to 1998-06-15) - 元本削減ステップ反映 (1997-12-14に20,000,000.00へ)
+    assert periods[6].notional_amount == Decimal("20000000.00")
+
+    # 9期目 (1998-12-14 to 1999-06-14) - 元本削減ステップ反映 (1998-12-14に10,000,000.00へ)
+    assert periods[8].notional_amount == Decimal("10000000.00")
+
+    # 10期目 (1999-06-14 to 1999-12-14) - 想定元本 10,000,000.00
+    assert periods[9].notional_amount == Decimal("10000000.00")

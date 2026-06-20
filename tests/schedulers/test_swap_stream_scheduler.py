@@ -165,3 +165,53 @@ def test_swap_stream_scheduler_fx_linked_notional_leg():
         calc2.fx_linked_notional_amount.adjusted_fx_spot_fixing_date.to_date()
         == date(2006, 4, 7)
     )
+
+
+def test_generate_principal_exchanges_notional_amortization():
+    """Test SwapStreamScheduler principal exchange generation for notional amortization schedule using ird-ex02."""
+    from decimal import Decimal
+    from pathlib import Path
+
+    from xsdata.formats.dataclass.parsers import XmlParser
+
+    from fpml.confirmation import DataDocument, PrincipalExchanges
+
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex02-stub-amort-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    # 浮動レッグストリームを取得し、元本交換を設定する
+    floating_stream = doc.trade[0].swap.swap_stream[0]
+    floating_stream.principal_exchanges = PrincipalExchanges(
+        initial_exchange=True,
+        final_exchange=True,
+        intermediate_exchange=False,
+    )
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+    scheduler = SwapStreamScheduler(calendar, resolver)
+
+    exchanges = scheduler.generate_principal_exchanges(floating_stream)
+
+    assert len(exchanges) == 2
+
+    # 初期元本交換: 開始日 1995-01-16 時点の元本 (50,000,000.00)
+    # 元本交換量はマイナスになるため、-50,000,000.00
+    assert exchanges[0].unadjusted_principal_exchange_date.to_date() == date(
+        1995, 1, 16
+    )
+    assert exchanges[0].principal_exchange_amount == Decimal("-50000000.00")
+
+    # 最終元本交換: 終了日 1999-12-14 時点の元本 (10,000,000.00)
+    # 元本削減後の最終元本 10,000,000.00
+    assert exchanges[1].unadjusted_principal_exchange_date.to_date() == date(
+        1999, 12, 14
+    )
+    assert exchanges[1].principal_exchange_amount == Decimal("10000000.00")

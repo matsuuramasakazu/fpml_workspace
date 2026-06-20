@@ -21,7 +21,7 @@ class TestHolidaysToml:
         gblo_file = self.config_dir / "holidays_GBLO.toml"
         with open(gblo_file, "rb") as f:
             data = tomllib.load(f)
-        
+
         assert "holidays" in data, "TOML must contain [holidays] section"
         assert isinstance(data["holidays"], dict), "[holidays] must be a dict"
 
@@ -30,7 +30,7 @@ class TestHolidaysToml:
         gblo_file = self.config_dir / "holidays_GBLO.toml"
         with open(gblo_file, "rb") as f:
             data = tomllib.load(f)
-        
+
         holidays = data.get("holidays", {})
         assert len(holidays) > 0, "GBLO must have at least one holiday entry"
 
@@ -44,7 +44,7 @@ class TestHolidaysToml:
         usny_file = self.config_dir / "holidays_USNY.toml"
         with open(usny_file, "rb") as f:
             data = tomllib.load(f)
-        
+
         assert "holidays" in data, "TOML must contain [holidays] section"
         assert isinstance(data["holidays"], dict), "[holidays] must be a dict"
 
@@ -58,6 +58,6 @@ class TestHolidaysToml:
         jpto_file = self.config_dir / "holidays_JPTO.toml"
         with open(jpto_file, "rb") as f:
             data = tomllib.load(f)
-        
+
         assert "holidays" in data, "TOML must contain [holidays] section"
         assert isinstance(data["holidays"], dict), "[holidays] must be a dict"

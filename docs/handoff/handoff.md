@@ -2,8 +2,6 @@
 
 本セッションでは、金利スワップ（IRS）および通貨スワップ（CCS）のキャッシュフロー展開ツールにおける拡張機能（Phase 2）の要件定義と設計方針の合意を完了しました。
 
-次のセッションでは、起票された個別タスクの **Issue #17**（Stub対応）から順番に実装（TDDサイクル）を開始します。
-
 ---
 
 ## 関連アーティファクトとドキュメント
@@ -18,9 +16,8 @@
 
 ## 現在のステータスと次のセッションのタスク
 
-当初の計画であった **Stub（スタブ）** と **Amortization（想定元本削減）** に加え、議論により決定した追加の3要件（**Rate/Spread Step Schedule**, **Reset in Arrears**, **Compounding**）を加え、以下の5つの垂直スライス（Tracer Bullet）に分割して GitHub に起票済みです。
+要件について、以下の5つのGitHub Issueに起票済みです。
 
-### 実施対象タスク
 1. **[GitHub Issue #17](https://github.com/matsuuramasakazu/fpml_workspace/issues/17) (次のセッションのフォーカス)**
    - **内容**: Stub (Initial/Final) Date Expansion and Rate Resolution
    - **状態**: ready-for-agent

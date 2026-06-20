@@ -63,20 +63,7 @@ class SwapStreamScheduler:
 
         # 元本 (Notional) の取得
         calc_params = stream.calculation_period_amount.calculation
-        notional_schedule = calc_params.notional_schedule
         fx_linked_notional_schedule = calc_params.fx_linked_notional_schedule
-        notional = None
-
-        if notional_schedule is not None:
-            if notional_schedule.notional_step_schedule is not None:
-                notional = notional_schedule.notional_step_schedule.initial_value
-            else:
-                resolved_notional = self._resolver.resolve(
-                    notional_schedule.notional_step_parameters_reference
-                )
-                notional = resolved_notional.initial_value
-        elif fx_linked_notional_schedule is not None:
-            notional = fx_linked_notional_schedule.initial_value
 
         exchanges = []
         calc_dates = stream.calculation_period_dates
@@ -88,6 +75,12 @@ class SwapStreamScheduler:
             adjusted_date = self._adjuster.adjust_date(
                 unadjusted_date, eff_date.date_adjustments
             )
+            if fx_linked_notional_schedule is not None:
+                notional = fx_linked_notional_schedule.initial_value
+            else:
+                notional = self._calculation_period_scheduler.resolve_notional(
+                    calc_params, unadjusted_date
+                )
             exchanges.append(
                 PrincipalExchange(
                     unadjusted_principal_exchange_date=XmlDate(
@@ -109,6 +102,12 @@ class SwapStreamScheduler:
             adjusted_date = self._adjuster.adjust_date(
                 unadjusted_date, term_date.date_adjustments
             )
+            if fx_linked_notional_schedule is not None:
+                notional = fx_linked_notional_schedule.initial_value
+            else:
+                notional = self._calculation_period_scheduler.resolve_notional(
+                    calc_params, unadjusted_date
+                )
             exchanges.append(
                 PrincipalExchange(
                     unadjusted_principal_exchange_date=XmlDate(

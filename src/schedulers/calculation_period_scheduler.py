@@ -1,5 +1,6 @@
 import calendar
 from datetime import date
+from decimal import Decimal
 from typing import List
 
 from xsdata.models.datatype import XmlDate
@@ -101,6 +102,43 @@ class CalculationPeriodScheduler:
         dates.append(start_date)
         return sorted(list(set(dates)))
 
+    def resolve_notional(self, calc_params, ref_date: date) -> Decimal | None:
+        """指定された基準日（ref_date）時点の想定元本を解決します。"""
+        if calc_params.fx_linked_notional_schedule is not None:
+            return None
+
+        notional_schedule = calc_params.notional_schedule
+        if notional_schedule is None:
+            return None
+
+        step_schedule = None
+        if notional_schedule.notional_step_schedule is not None:
+            step_schedule = notional_schedule.notional_step_schedule
+        elif notional_schedule.notional_step_parameters_reference is not None:
+            step_schedule = self._resolver.resolve(
+                notional_schedule.notional_step_parameters_reference
+            )
+
+        if step_schedule is None:
+            return None
+
+        initial_value = step_schedule.initial_value
+        steps = getattr(step_schedule, "step", [])
+        if not steps:
+            return initial_value
+
+        # step_date でソート
+        sorted_steps = sorted(steps, key=lambda s: s.step_date.to_date())
+
+        resolved_value = initial_value
+        for step in sorted_steps:
+            if step.step_date.to_date() <= ref_date:
+                resolved_value = step.step_value
+            else:
+                break
+
+        return resolved_value
+
     def generate_periods(self, stream: InterestRateStream) -> List[CalculationPeriod]:
         """InterestRateStream パラメータから CalculationPeriod スケジュールを展開します。
 
@@ -180,19 +218,7 @@ class CalculationPeriodScheduler:
         day_count_fraction = calc_params.day_count_fraction.value
         day_count_calc = DayCountCalculator(day_count_fraction)
 
-        # 元本の取得
-        notional = None
         fx_linked_notional_schedule = calc_params.fx_linked_notional_schedule
-
-        if fx_linked_notional_schedule is None:
-            notional_schedule = calc_params.notional_schedule
-            if notional_schedule.notional_step_schedule is not None:
-                notional = notional_schedule.notional_step_schedule.initial_value
-            else:
-                resolved_notional = self._resolver.resolve(
-                    notional_schedule.notional_step_parameters_reference
-                )
-                notional = resolved_notional.initial_value
 
         # 固定利率（ある場合）
         fixed_rate = None
@@ -208,6 +234,9 @@ class CalculationPeriodScheduler:
 
             num_days = (aend - astart).days
             year_fraction = day_count_calc.calculate_year_fraction(astart, aend)
+
+            # 想定元本の解決
+            notional = self.resolve_notional(calc_params, ustart)
 
             # 浮動金利パラメータ（ある場合）の取得
             floating_rate_def = self._fixing_scheduler.calculate_fixing(

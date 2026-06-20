@@ -1,4 +1,3 @@
-import os
 import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -185,7 +184,6 @@ def test_pipeline_cross_currency_principal_exchange():
 def test_pipeline_fx_linked_notional_swap():
     """E2E test to verify FX-linked notional swap cashflow expansion using ird-ex25."""
     from datetime import date
-    from decimal import Decimal
 
     from xsdata.formats.dataclass.parsers import XmlParser
 
@@ -257,7 +255,6 @@ def test_pipeline_fx_linked_notional_swap():
 def test_pipeline_rfr_observation_shift_ex44():
     """E2E test for RFR compound swap with Observation Shift using ird-ex44."""
     from datetime import date
-    from decimal import Decimal
 
     from xsdata.formats.dataclass.parsers import XmlParser
 
@@ -321,7 +318,6 @@ def test_pipeline_rfr_observation_shift_ex44():
 def test_pipeline_rfr_lookback_ex45():
     """E2E test for RFR compound swap with Lookback using ird-ex45."""
     from datetime import date
-    from decimal import Decimal
 
     from xsdata.formats.dataclass.parsers import XmlParser
 

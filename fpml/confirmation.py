@@ -1084,9 +1084,7 @@ class CalculationAgentPartyEnum(Enum):
     EXERCISING_PARTY = "ExercisingParty"
     NON_EXERCISING_PARTY = "NonExercisingParty"
     AS_SPECIFIED_IN_MASTER_AGREEMENT = "AsSpecifiedInMasterAgreement"
-    AS_SPECIFIED_IN_STANDARD_TERMS_SUPPLEMENT = (
-        "AsSpecifiedInStandardTermsSupplement"
-    )
+    AS_SPECIFIED_IN_STANDARD_TERMS_SUPPLEMENT = "AsSpecifiedInStandardTermsSupplement"
     BOTH = "Both"
 
 
@@ -4148,9 +4146,7 @@ class DividendDateReferenceEnum(Enum):
     CASH_SETTLEMENT_PAYMENT_DATE = "CashSettlementPaymentDate"
     FLOATING_AMOUNT_PAYMENT_DATE = "FloatingAmountPaymentDate"
     CASH_SETTLE_PAYMENT_DATE_EX_DIV = "CashSettlePaymentDateExDiv"
-    CASH_SETTLE_PAYMENT_DATE_ISSUER_PAYMENT = (
-        "CashSettlePaymentDateIssuerPayment"
-    )
+    CASH_SETTLE_PAYMENT_DATE_ISSUER_PAYMENT = "CashSettlePaymentDateIssuerPayment"
     EX_DIVIDEND_PAYMENT_DATE = "ExDividendPaymentDate"
 
 
@@ -4268,12 +4264,8 @@ class DualCurrencyStrikeQuoteBasisEnum(Enum):
     expressed in terms of the deposit and alternate currencies.
     """
 
-    DEPOSIT_CURRENCY_PER_ALTERNATE_CURRENCY = (
-        "DepositCurrencyPerAlternateCurrency"
-    )
-    ALTERNATE_CURRENCY_PER_DEPOSIT_CURRENCY = (
-        "AlternateCurrencyPerDepositCurrency"
-    )
+    DEPOSIT_CURRENCY_PER_ALTERNATE_CURRENCY = "DepositCurrencyPerAlternateCurrency"
+    ALTERNATE_CURRENCY_PER_DEPOSIT_CURRENCY = "AlternateCurrencyPerDepositCurrency"
 
 
 @dataclass(kw_only=True)
@@ -4746,12 +4738,8 @@ class EnvironmentalProductTypeEnum(Enum):
     AUSCARBON_CREDIT_UNIT = "AUSCarbonCreditUnit"
     AUSCARBON_UNIT = "AUSCarbonUnit"
     AUSENERGY_SAVING_CERTIFICATE = "AUSEnergySavingCertificate"
-    AUSLARGE_SCALE_GENERATION_CERTIFICATE = (
-        "AUSLargeScaleGenerationCertificate"
-    )
-    AUSSMALL_SCALE_TECHNOLOGY_CERTIFICATE = (
-        "AUSSmallScaleTechnologyCertificate"
-    )
+    AUSLARGE_SCALE_GENERATION_CERTIFICATE = "AUSLargeScaleGenerationCertificate"
+    AUSSMALL_SCALE_TECHNOLOGY_CERTIFICATE = "AUSSmallScaleTechnologyCertificate"
     AUSVICTORIAN_ENERGY_EFFICIENCY_CERTIFICATE = (
         "AUSVictorianEnergyEfficiencyCertificate"
     )
@@ -8414,9 +8402,7 @@ class NegativeInterestRateTreatmentEnum(Enum):
 
     NEGATIVE_INTEREST_RATE_METHOD = "NegativeInterestRateMethod"
     ZERO_INTEREST_RATE_METHOD = "ZeroInterestRateMethod"
-    ZERO_INTEREST_RATE_METHOD_EXCLUDING_SPREAD = (
-        "ZeroInterestRateMethodExcludingSpread"
-    )
+    ZERO_INTEREST_RATE_METHOD_EXCLUDING_SPREAD = "ZeroInterestRateMethodExcludingSpread"
 
 
 @dataclass(kw_only=True)
@@ -21231,15 +21217,13 @@ class ClearingInstructions:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    requested_clearing_organization_party_reference: None | PartyReference = (
-        field(
-            default=None,
-            metadata={
-                "name": "requestedClearingOrganizationPartyReference",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    requested_clearing_organization_party_reference: None | PartyReference = field(
+        default=None,
+        metadata={
+            "name": "requestedClearingOrganizationPartyReference",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
 
 
@@ -21276,15 +21260,15 @@ class CoalStandardQualitySchedule:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    delivery_periods_schedule_reference: (
-        None | CalculationPeriodsScheduleReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "deliveryPeriodsScheduleReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    delivery_periods_schedule_reference: None | CalculationPeriodsScheduleReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "deliveryPeriodsScheduleReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
 
 
@@ -21484,15 +21468,15 @@ class CommodityPhysicalQuantitySchedule:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    delivery_periods_schedule_reference: (
-        None | CalculationPeriodsScheduleReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "deliveryPeriodsScheduleReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    delivery_periods_schedule_reference: None | CalculationPeriodsScheduleReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "deliveryPeriodsScheduleReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     id: None | str = field(
         default=None,
@@ -21547,9 +21531,7 @@ class CommoditySettlementPeriodsNotionalQuantitySchedule:
     class Meta:
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    settlement_periods_notional_quantity_step: list[
-        CommodityNotionalQuantity
-    ] = field(
+    settlement_periods_notional_quantity_step: list[CommodityNotionalQuantity] = field(
         default_factory=list,
         metadata={
             "name": "settlementPeriodsNotionalQuantityStep",
@@ -21801,15 +21783,13 @@ class CovenantObligationIdentifier:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    versioned_covenant_obligation_id: list[VersionedCovenantObligationId] = (
-        field(
-            default_factory=list,
-            metadata={
-                "name": "versionedCovenantObligationId",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    versioned_covenant_obligation_id: list[VersionedCovenantObligationId] = field(
+        default_factory=list,
+        metadata={
+            "name": "versionedCovenantObligationId",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     id: None | str = field(
         default=None,
@@ -22025,9 +22005,7 @@ class DateRelativeToCalculationPeriodDates:
     class Meta:
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    calculation_period_dates_reference: list[
-        CalculationPeriodDatesReference
-    ] = field(
+    calculation_period_dates_reference: list[CalculationPeriodDatesReference] = field(
         default_factory=list,
         metadata={
             "name": "calculationPeriodDatesReference",
@@ -22888,14 +22866,12 @@ class FinalCalculationPeriodDateAdjustment:
     class Meta:
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    relevant_underlying_date_reference: RelevantUnderlyingDateReference = (
-        field(
-            metadata={
-                "name": "relevantUnderlyingDateReference",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            }
-        )
+    relevant_underlying_date_reference: RelevantUnderlyingDateReference = field(
+        metadata={
+            "name": "relevantUnderlyingDateReference",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        }
     )
     swap_stream_reference: InterestRateStreamReference = field(
         metadata={
@@ -23139,16 +23115,14 @@ class FormulaTerm:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         }
     )
-    partial_derivative_reference: list[PricingParameterDerivativeReference] = (
-        field(
-            default_factory=list,
-            metadata={
-                "name": "partialDerivativeReference",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-                "min_occurs": 1,
-            },
-        )
+    partial_derivative_reference: list[PricingParameterDerivativeReference] = field(
+        default_factory=list,
+        metadata={
+            "name": "partialDerivativeReference",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            "min_occurs": 1,
+        },
     )
 
 
@@ -23636,15 +23610,13 @@ class FxOutstandingGain:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         }
     )
-    settlement_adjustment_style: None | FxSettlementAdjustmentMethodEnum = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementAdjustmentStyle",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_adjustment_style: None | FxSettlementAdjustmentMethodEnum = field(
+        default=None,
+        metadata={
+            "name": "settlementAdjustmentStyle",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
 
 
@@ -24925,14 +24897,12 @@ class NotionalStepRule:
     class Meta:
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    calculation_period_dates_reference: CalculationPeriodDatesReference = (
-        field(
-            metadata={
-                "name": "calculationPeriodDatesReference",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            }
-        )
+    calculation_period_dates_reference: CalculationPeriodDatesReference = field(
+        metadata={
+            "name": "calculationPeriodDatesReference",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        }
     )
     step_frequency: Frequency = field(
         metadata={
@@ -26193,15 +26163,13 @@ class PricingParameterShift:
     class Meta:
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    parameter_reference: None | AssetOrTermPointOrPricingStructureReference = (
-        field(
-            default=None,
-            metadata={
-                "name": "parameterReference",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    parameter_reference: None | AssetOrTermPointOrPricingStructureReference = field(
+        default=None,
+        metadata={
+            "name": "parameterReference",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     asset_reference: None | AssetReference = field(
         default=None,
@@ -29025,15 +28993,13 @@ class Beneficiary:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    routing_ids_and_explicit_details: None | RoutingIdsAndExplicitDetails = (
-        field(
-            default=None,
-            metadata={
-                "name": "routingIdsAndExplicitDetails",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    routing_ids_and_explicit_details: None | RoutingIdsAndExplicitDetails = field(
+        default=None,
+        metadata={
+            "name": "routingIdsAndExplicitDetails",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     beneficiary_party_reference: None | PartyReference = field(
         default=None,
@@ -29309,15 +29275,13 @@ class CashPriceMethod:
     class Meta:
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    cash_settlement_reference_banks: None | CashSettlementReferenceBanks = (
-        field(
-            default=None,
-            metadata={
-                "name": "cashSettlementReferenceBanks",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    cash_settlement_reference_banks: None | CashSettlementReferenceBanks = field(
+        default=None,
+        metadata={
+            "name": "cashSettlementReferenceBanks",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     cash_settlement_currency: Currency = field(
         metadata={
@@ -29935,15 +29899,15 @@ class CommodityFixedPriceSchedule:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_periods_price_schedule: list[
-        CommoditySettlementPeriodsPriceSchedule
-    ] = field(
-        default_factory=list,
-        metadata={
-            "name": "settlementPeriodsPriceSchedule",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    settlement_periods_price_schedule: list[CommoditySettlementPeriodsPriceSchedule] = (
+        field(
+            default_factory=list,
+            metadata={
+                "name": "settlementPeriodsPriceSchedule",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     calculation_periods_reference: None | CalculationPeriodsReference = field(
         default=None,
@@ -29963,15 +29927,15 @@ class CommodityFixedPriceSchedule:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
 
 
@@ -30070,15 +30034,15 @@ class CommodityNotionalQuantitySchedule:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     id: None | str = field(
         default=None,
@@ -30112,15 +30076,13 @@ class CommodityPhysicalQuantity(CommodityPhysicalQuantityBase):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    physical_quantity_schedule: None | CommodityPhysicalQuantitySchedule = (
-        field(
-            default=None,
-            metadata={
-                "name": "physicalQuantitySchedule",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    physical_quantity_schedule: None | CommodityPhysicalQuantitySchedule = field(
+        default=None,
+        metadata={
+            "name": "physicalQuantitySchedule",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     total_physical_quantity: None | UnitQuantity = field(
         default=None,
@@ -30221,15 +30183,15 @@ class CommodityStrikeSchedule:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
 
 
@@ -30425,15 +30387,13 @@ class CorrespondentInformation:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    routing_ids_and_explicit_details: None | RoutingIdsAndExplicitDetails = (
-        field(
-            default=None,
-            metadata={
-                "name": "routingIdsAndExplicitDetails",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    routing_ids_and_explicit_details: None | RoutingIdsAndExplicitDetails = field(
+        default=None,
+        metadata={
+            "name": "routingIdsAndExplicitDetails",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     correspondent_party_reference: None | PartyReference = field(
         default=None,
@@ -30519,15 +30479,13 @@ class CreditEventNotice1:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    publicly_available_information: None | PubliclyAvailableInformation = (
-        field(
-            default=None,
-            metadata={
-                "name": "publiclyAvailableInformation",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    publicly_available_information: None | PubliclyAvailableInformation = field(
+        default=None,
+        metadata={
+            "name": "publiclyAvailableInformation",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
 
 
@@ -30586,15 +30544,13 @@ class CrossCurrencyMethod:
     class Meta:
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    cash_settlement_reference_banks: None | CashSettlementReferenceBanks = (
-        field(
-            default=None,
-            metadata={
-                "name": "cashSettlementReferenceBanks",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    cash_settlement_reference_banks: None | CashSettlementReferenceBanks = field(
+        default=None,
+        metadata={
+            "name": "cashSettlementReferenceBanks",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     cash_settlement_currency: list[Currency] = field(
         default_factory=list,
@@ -30931,15 +30887,13 @@ class ElectricityDelivery:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    transmission_contingency: None | ElectricityTransmissionContingency = (
-        field(
-            default=None,
-            metadata={
-                "name": "transmissionContingency",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    transmission_contingency: None | ElectricityTransmissionContingency = field(
+        default=None,
+        metadata={
+            "name": "transmissionContingency",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     interconnection_point: None | InterconnectionPoint = field(
         default=None,
@@ -30968,9 +30922,7 @@ class ElectricityDelivery:
 
 
 @dataclass(kw_only=True)
-class ElectricityPhysicalDeliveryQuantitySchedule(
-    CommodityPhysicalQuantitySchedule
-):
+class ElectricityPhysicalDeliveryQuantitySchedule(CommodityPhysicalQuantitySchedule):
     """
     Allows the documentation of a shaped quantity trade where the quantity
     changes over the life of the transaction.
@@ -32104,15 +32056,13 @@ class FxDisruptionFallbacks:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_agent_determination: list[CalculationAgentDetermination] = (
-        field(
-            default_factory=list,
-            metadata={
-                "name": "calculationAgentDetermination",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    calculation_agent_determination: list[CalculationAgentDetermination] = field(
+        default_factory=list,
+        metadata={
+            "name": "calculationAgentDetermination",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
 
 
@@ -32395,15 +32345,13 @@ class FxKnockoutLevel:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         }
     )
-    settlement_adjustment_style: None | FxSettlementAdjustmentMethodEnum = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementAdjustmentStyle",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_adjustment_style: None | FxSettlementAdjustmentMethodEnum = field(
+        default=None,
+        metadata={
+            "name": "settlementAdjustmentStyle",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
 
 
@@ -33255,15 +33203,13 @@ class GasPhysicalQuantity(CommodityPhysicalQuantityBase):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    physical_quantity_schedule: None | CommodityPhysicalQuantitySchedule = (
-        field(
-            default=None,
-            metadata={
-                "name": "physicalQuantitySchedule",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    physical_quantity_schedule: None | CommodityPhysicalQuantitySchedule = field(
+        default=None,
+        metadata={
+            "name": "physicalQuantitySchedule",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     total_physical_quantity: None | UnitQuantity = field(
         default=None,
@@ -33512,15 +33458,13 @@ class GrossCashflow:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    party_trade_identifier_reference: None | PartyTradeIdentifierReference = (
-        field(
-            default=None,
-            metadata={
-                "name": "partyTradeIdentifierReference",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    party_trade_identifier_reference: None | PartyTradeIdentifierReference = field(
+        default=None,
+        metadata={
+            "name": "partyTradeIdentifierReference",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     payer_party_reference: None | PartyReference = field(
         default=None,
@@ -33850,15 +33794,13 @@ class IntermediaryInformation:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    routing_ids_and_explicit_details: None | RoutingIdsAndExplicitDetails = (
-        field(
-            default=None,
-            metadata={
-                "name": "routingIdsAndExplicitDetails",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    routing_ids_and_explicit_details: None | RoutingIdsAndExplicitDetails = field(
+        default=None,
+        metadata={
+            "name": "routingIdsAndExplicitDetails",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     intermediary_sequence_number: int = field(
         metadata={
@@ -33973,9 +33915,7 @@ class LoanCovenantObligationMetric:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_details: (
-        None | LoanCovenantObligationMetricCalculationDetails
-    ) = field(
+    calculation_details: None | LoanCovenantObligationMetricCalculationDetails = field(
         default=None,
         metadata={
             "name": "calculationDetails",
@@ -34362,15 +34302,13 @@ class MidMarketValuationMethod:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    cash_settlement_reference_banks: None | CashSettlementReferenceBanks = (
-        field(
-            default=None,
-            metadata={
-                "name": "cashSettlementReferenceBanks",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    cash_settlement_reference_banks: None | CashSettlementReferenceBanks = field(
+        default=None,
+        metadata={
+            "name": "cashSettlementReferenceBanks",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     cash_collateral_currency: None | Currency = field(
         default=None,
@@ -35148,9 +35086,7 @@ class PaymentDates:
     class Meta:
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    calculation_period_dates_reference: (
-        None | CalculationPeriodDatesReference
-    ) = field(
+    calculation_period_dates_reference: None | CalculationPeriodDatesReference = field(
         default=None,
         metadata={
             "name": "calculationPeriodDatesReference",
@@ -35586,15 +35522,13 @@ class PricingParameterDerivative:
             "min_length": 1,
         },
     )
-    parameter_reference: None | AssetOrTermPointOrPricingStructureReference = (
-        field(
-            default=None,
-            metadata={
-                "name": "parameterReference",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    parameter_reference: None | AssetOrTermPointOrPricingStructureReference = field(
+        default=None,
+        metadata={
+            "name": "parameterReference",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     asset_reference: None | AssetReference = field(
         default=None,
@@ -36203,15 +36137,13 @@ class ReplacementValueMethodBase:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         }
     )
-    cash_settlement_reference_banks: None | CashSettlementReferenceBanks = (
-        field(
-            default=None,
-            metadata={
-                "name": "cashSettlementReferenceBanks",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    cash_settlement_reference_banks: None | CashSettlementReferenceBanks = field(
+        default=None,
+        metadata={
+            "name": "cashSettlementReferenceBanks",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     protected_party: None | PartySelector = field(
         default=None,
@@ -36502,15 +36434,13 @@ class Routing:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    routing_ids_and_explicit_details: None | RoutingIdsAndExplicitDetails = (
-        field(
-            default=None,
-            metadata={
-                "name": "routingIdsAndExplicitDetails",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    routing_ids_and_explicit_details: None | RoutingIdsAndExplicitDetails = field(
+        default=None,
+        metadata={
+            "name": "routingIdsAndExplicitDetails",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
 
 
@@ -36712,15 +36642,15 @@ class SettlementPeriodsSchedule:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    delivery_periods_schedule_reference: (
-        None | CalculationPeriodsScheduleReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "deliveryPeriodsScheduleReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    delivery_periods_schedule_reference: None | CalculationPeriodsScheduleReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "deliveryPeriodsScheduleReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
 
 
@@ -36753,15 +36683,13 @@ class SettlementRateSource:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    cash_settlement_reference_banks: None | CashSettlementReferenceBanks = (
-        field(
-            default=None,
-            metadata={
-                "name": "cashSettlementReferenceBanks",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    cash_settlement_reference_banks: None | CashSettlementReferenceBanks = field(
+        default=None,
+        metadata={
+            "name": "cashSettlementReferenceBanks",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
 
 
@@ -38949,15 +38877,15 @@ class CommodityDeliveryPeriods:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     id: None | str = field(
         default=None,
@@ -39155,15 +39083,15 @@ class CommodityFx:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
 
 
@@ -39293,15 +39221,15 @@ class CommodityRelativePaymentDates:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     payment_days_offset: DateOffset = field(
         metadata={
@@ -39387,15 +39315,15 @@ class CommoditySpreadSchedule:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
 
 
@@ -39975,15 +39903,15 @@ class ElectricityPhysicalQuantity(CommodityPhysicalQuantityBase):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    physical_quantity_schedule: list[
-        ElectricityPhysicalDeliveryQuantitySchedule
-    ] = field(
-        default_factory=list,
-        metadata={
-            "name": "physicalQuantitySchedule",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    physical_quantity_schedule: list[ElectricityPhysicalDeliveryQuantitySchedule] = (
+        field(
+            default_factory=list,
+            metadata={
+                "name": "physicalQuantitySchedule",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     total_physical_quantity: None | UnitQuantity = field(
         default=None,
@@ -41234,14 +41162,12 @@ class FxLinkedNotionalSchedule:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         }
     )
-    varying_notional_interim_exchange_payment_dates: RelativeDateOffset = (
-        field(
-            metadata={
-                "name": "varyingNotionalInterimExchangePaymentDates",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            }
-        )
+    varying_notional_interim_exchange_payment_dates: RelativeDateOffset = field(
+        metadata={
+            "name": "varyingNotionalInterimExchangePaymentDates",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        }
     )
 
 
@@ -41806,9 +41732,7 @@ class InflationRateCalculationBase(Rate):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    negative_interest_rate_treatment: (
-        None | NegativeInterestRateTreatmentEnum
-    ) = field(
+    negative_interest_rate_treatment: None | NegativeInterestRateTreatmentEnum = field(
         default=None,
         metadata={
             "name": "negativeInterestRateTreatment",
@@ -43988,9 +43912,7 @@ class RelativeDates(RelativeDateOffset):
 
 
 @dataclass(kw_only=True)
-class ReplacementValueCalculationAgentDeterminationMethod(
-    ReplacementValueMethodBase
-):
+class ReplacementValueCalculationAgentDeterminationMethod(ReplacementValueMethodBase):
     """
     This type is a specific type holding the data fields for the
     replacement value calculation agent determination cash settlement
@@ -44136,14 +44058,12 @@ class ResetDates:
     class Meta:
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    calculation_period_dates_reference: CalculationPeriodDatesReference = (
-        field(
-            metadata={
-                "name": "calculationPeriodDatesReference",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            }
-        )
+    calculation_period_dates_reference: CalculationPeriodDatesReference = field(
+        metadata={
+            "name": "calculationPeriodDatesReference",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        }
     )
     reset_relative_to: None | ResetRelativeToEnum = field(
         default=None,
@@ -44473,9 +44393,7 @@ class SwaptionPhysicalSettlement:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         }
     )
-    predetermined_clearing_organization_party_reference: (
-        None | PartyReference
-    ) = field(
+    predetermined_clearing_organization_party_reference: None | PartyReference = field(
         default=None,
         metadata={
             "name": "predeterminedClearingOrganizationPartyReference",
@@ -45544,15 +45462,13 @@ class BullionPhysicalLeg1(PhysicalForwardLeg):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    physical_quantity_schedule: None | CommodityPhysicalQuantitySchedule = (
-        field(
-            default=None,
-            metadata={
-                "name": "physicalQuantitySchedule",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    physical_quantity_schedule: None | CommodityPhysicalQuantitySchedule = field(
+        default=None,
+        metadata={
+            "name": "physicalQuantitySchedule",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     total_physical_quantity: None | UnitQuantity = field(
         default=None,
@@ -45982,9 +45898,7 @@ class CommodityInterestLeg1(CommodityPerformanceSwapLeg1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_schedule: (
-        None | CommodityCalculationPeriodsSchedule
-    ) = field(
+    calculation_periods_schedule: None | CommodityCalculationPeriodsSchedule = field(
         default=None,
         metadata={
             "name": "calculationPeriodsSchedule",
@@ -46010,15 +45924,15 @@ class CommodityInterestLeg1(CommodityPerformanceSwapLeg1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     relative_payment_dates: None | CommodityRelativePaymentDates = field(
         default=None,
@@ -46060,14 +45974,12 @@ class CommodityInterestLeg1(CommodityPerformanceSwapLeg1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    commodity_fixed_interest_calculation: CommodityFixedInterestCalculation = (
-        field(
-            metadata={
-                "name": "commodityFixedInterestCalculation",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            }
-        )
+    commodity_fixed_interest_calculation: CommodityFixedInterestCalculation = field(
+        metadata={
+            "name": "commodityFixedInterestCalculation",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        }
     )
 
 
@@ -46169,15 +46081,15 @@ class CommodityPricingDates:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     lag: None | Lag = field(
         default=None,
@@ -46358,15 +46270,15 @@ class CommodityValuationDates:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     lag: None | Lag = field(
         default=None,
@@ -47630,9 +47542,7 @@ class FixedPriceLeg(FinancialSwapLeg):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_schedule: (
-        None | CommodityCalculationPeriodsSchedule
-    ) = field(
+    calculation_periods_schedule: None | CommodityCalculationPeriodsSchedule = field(
         default=None,
         metadata={
             "name": "calculationPeriodsSchedule",
@@ -47658,15 +47568,15 @@ class FixedPriceLeg(FinancialSwapLeg):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     fixed_price_schedule: None | CommodityFixedPriceSchedule = field(
         default=None,
@@ -47716,15 +47626,13 @@ class FixedPriceLeg(FinancialSwapLeg):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    notional_quantity_schedule: None | CommodityNotionalQuantitySchedule = (
-        field(
-            default=None,
-            metadata={
-                "name": "notionalQuantitySchedule",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    notional_quantity_schedule: None | CommodityNotionalQuantitySchedule = field(
+        default=None,
+        metadata={
+            "name": "notionalQuantitySchedule",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     notional_quantity: None | CommodityNotionalQuantity = field(
         default=None,
@@ -48879,15 +48787,15 @@ class InflationRateCalculation1(InflationRateCalculationBase):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    final_principal_exchange_calculation: (
-        None | FinalPrincipalExchangeCalculation
-    ) = field(
-        default=None,
-        metadata={
-            "name": "finalPrincipalExchangeCalculation",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    final_principal_exchange_calculation: None | FinalPrincipalExchangeCalculation = (
+        field(
+            default=None,
+            metadata={
+                "name": "finalPrincipalExchangeCalculation",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
 
 
@@ -48919,12 +48827,14 @@ class InterestLegResetDates:
     class Meta:
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    calculation_period_dates_reference: InterestLegCalculationPeriodDatesReference = field(
-        metadata={
-            "name": "calculationPeriodDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        }
+    calculation_period_dates_reference: InterestLegCalculationPeriodDatesReference = (
+        field(
+            metadata={
+                "name": "calculationPeriodDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            }
+        )
     )
     reset_relative_to: None | ResetRelativeToEnum = field(
         default=None,
@@ -49695,15 +49605,13 @@ class MetalPhysicalLeg1(PhysicalForwardLeg):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    physical_quantity_schedule: None | CommodityPhysicalQuantitySchedule = (
-        field(
-            default=None,
-            metadata={
-                "name": "physicalQuantitySchedule",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    physical_quantity_schedule: None | CommodityPhysicalQuantitySchedule = field(
+        default=None,
+        metadata={
+            "name": "physicalQuantitySchedule",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     total_physical_quantity: None | UnitQuantity = field(
         default=None,
@@ -51270,9 +51178,7 @@ class WeatherLeg(FinancialSwapLeg):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    weather_calculation_periods_reference: (
-        None | CalculationPeriodsReference
-    ) = field(
+    weather_calculation_periods_reference: None | CalculationPeriodsReference = field(
         default=None,
         metadata={
             "name": "weatherCalculationPeriodsReference",
@@ -52010,15 +51916,13 @@ class CashSettlement:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    collateralized_cash_price_method: None | CollateralizedCashPriceMethod = (
-        field(
-            default=None,
-            metadata={
-                "name": "collateralizedCashPriceMethod",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    collateralized_cash_price_method: None | CollateralizedCashPriceMethod = field(
+        default=None,
+        metadata={
+            "name": "collateralizedCashPriceMethod",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     cash_price_method: None | CashPriceMethod = field(
         default=None,
@@ -52322,15 +52226,13 @@ class CommodityPhysicalAmericanExercise(Exercise):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    relative_commencement_dates: None | CommodityRelativeExpirationDates = (
-        field(
-            default=None,
-            metadata={
-                "name": "relativeCommencementDates",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    relative_commencement_dates: None | CommodityRelativeExpirationDates = field(
+        default=None,
+        metadata={
+            "name": "relativeCommencementDates",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     relative_expiration_dates: None | CommodityRelativeExpirationDates = field(
         default=None,
@@ -53974,16 +53876,14 @@ class PrincipalExchangeFeatures:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    principal_exchange_descriptions: list[PrincipalExchangeDescriptions] = (
-        field(
-            default_factory=list,
-            metadata={
-                "name": "principalExchangeDescriptions",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-                "min_occurs": 1,
-            },
-        )
+    principal_exchange_descriptions: list[PrincipalExchangeDescriptions] = field(
+        default_factory=list,
+        metadata={
+            "name": "principalExchangeDescriptions",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            "min_occurs": 1,
+        },
     )
 
 
@@ -55164,9 +55064,7 @@ class AbstractLoanContractEvent(AbstractLoanServicingEvent):
 
 
 @dataclass(kw_only=True)
-class ApplicableSettlementInstructionDetails(
-    AbstractApplicablePartyProfileObjects
-):
+class ApplicableSettlementInstructionDetails(AbstractApplicablePartyProfileObjects):
     """
     A structure that defines the assets (or type of assets) that a
     particular set of settlement instrution details may be associated with.
@@ -55301,9 +55199,7 @@ class AveragePriceLeg(CommoditySwapLeg1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_schedule: (
-        None | CommodityCalculationPeriodsSchedule
-    ) = field(
+    calculation_periods_schedule: None | CommodityCalculationPeriodsSchedule = field(
         default=None,
         metadata={
             "name": "calculationPeriodsSchedule",
@@ -55329,15 +55225,15 @@ class AveragePriceLeg(CommoditySwapLeg1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     commodity: Commodity = field(
         metadata={
@@ -55564,15 +55460,13 @@ class CommodityBasketUnderlyingByNotional(CommodityBasketUnderlyingBase):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    notional_quantity_schedule: None | CommodityNotionalQuantitySchedule = (
-        field(
-            default=None,
-            metadata={
-                "name": "notionalQuantitySchedule",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    notional_quantity_schedule: None | CommodityNotionalQuantitySchedule = field(
+        default=None,
+        metadata={
+            "name": "notionalQuantitySchedule",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     notional_quantity: None | CommodityNotionalQuantity = field(
         default=None,
@@ -56122,9 +56016,7 @@ class EquityValuation:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    f_pvfinal_price_election_fallback: (
-        None | FpvfinalPriceElectionFallbackEnum
-    ) = field(
+    f_pvfinal_price_election_fallback: None | FpvfinalPriceElectionFallbackEnum = field(
         default=None,
         metadata={
             "name": "fPVFinalPriceElectionFallback",
@@ -56524,9 +56416,7 @@ class FloatingPriceLeg(FinancialSwapLeg):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_schedule: (
-        None | CommodityCalculationPeriodsSchedule
-    ) = field(
+    calculation_periods_schedule: None | CommodityCalculationPeriodsSchedule = field(
         default=None,
         metadata={
             "name": "calculationPeriodsSchedule",
@@ -56552,15 +56442,15 @@ class FloatingPriceLeg(FinancialSwapLeg):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     commodity: Commodity1 = field(
         metadata={
@@ -56568,15 +56458,13 @@ class FloatingPriceLeg(FinancialSwapLeg):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         }
     )
-    notional_quantity_schedule: None | CommodityNotionalQuantitySchedule = (
-        field(
-            default=None,
-            metadata={
-                "name": "notionalQuantitySchedule",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    notional_quantity_schedule: None | CommodityNotionalQuantitySchedule = field(
+        default=None,
+        metadata={
+            "name": "notionalQuantitySchedule",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     notional_quantity: None | CommodityNotionalQuantity = field(
         default=None,
@@ -56714,9 +56602,7 @@ class FloatingRateCalculation1(FloatingRate):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    negative_interest_rate_treatment: (
-        None | NegativeInterestRateTreatmentEnum
-    ) = field(
+    negative_interest_rate_treatment: None | NegativeInterestRateTreatmentEnum = field(
         default=None,
         metadata={
             "name": "negativeInterestRateTreatment",
@@ -57594,15 +57480,13 @@ class LoanTradingDelayedCompensation:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    loan_contract_interest_accrual: list[LoanTradingLoanContractAccrual] = (
-        field(
-            default_factory=list,
-            metadata={
-                "name": "loanContractInterestAccrual",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    loan_contract_interest_accrual: list[LoanTradingLoanContractAccrual] = field(
+        default_factory=list,
+        metadata={
+            "name": "loanContractInterestAccrual",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     letter_of_credit_accrual: list[LoanTradingLetterOfCreditAccrual] = field(
         default_factory=list,
@@ -58932,15 +58816,15 @@ class CancelableProvision:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         }
     )
-    cancelable_provision_adjusted_dates: (
-        None | CancelableProvisionAdjustedDates
-    ) = field(
-        default=None,
-        metadata={
-            "name": "cancelableProvisionAdjustedDates",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    cancelable_provision_adjusted_dates: None | CancelableProvisionAdjustedDates = (
+        field(
+            default=None,
+            metadata={
+                "name": "cancelableProvisionAdjustedDates",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     final_calculation_period_date_adjustment: list[
         FinalCalculationPeriodDateAdjustment
@@ -59439,9 +59323,7 @@ class EquityExerciseValuationSettlement:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_price_default_election: (
-        None | SettlementPriceDefaultElection
-    ) = field(
+    settlement_price_default_election: None | SettlementPriceDefaultElection = field(
         default=None,
         metadata={
             "name": "settlementPriceDefaultElection",
@@ -59638,15 +59520,15 @@ class ExtendibleProvision:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         }
     )
-    extendible_provision_adjusted_dates: (
-        None | ExtendibleProvisionAdjustedDates
-    ) = field(
-        default=None,
-        metadata={
-            "name": "extendibleProvisionAdjustedDates",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    extendible_provision_adjusted_dates: None | ExtendibleProvisionAdjustedDates = (
+        field(
+            default=None,
+            metadata={
+                "name": "extendibleProvisionAdjustedDates",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
 
 
@@ -60290,15 +60172,13 @@ class FxAccrualForward1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_period_schedule: None | FxAccrualSettlementPeriodSchedule = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementPeriodSchedule",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_period_schedule: None | FxAccrualSettlementPeriodSchedule = field(
+        default=None,
+        metadata={
+            "name": "settlementPeriodSchedule",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
 
 
@@ -61757,15 +61637,13 @@ class FxTargetKnockoutForward1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_period_schedule: None | FxTargetSettlementPeriodSchedule = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementPeriodSchedule",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_period_schedule: None | FxTargetSettlementPeriodSchedule = field(
+        default=None,
+        metadata={
+            "name": "settlementPeriodSchedule",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
 
 
@@ -62433,15 +62311,13 @@ class LoanCovenantObligation(AbstractLoanCovenantObligation):
             "min_length": 1,
         },
     )
-    trigger_criteria: None | LoanCovenantObligationTriggerCriteriaDetails = (
-        field(
-            default=None,
-            metadata={
-                "name": "triggerCriteria",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    trigger_criteria: None | LoanCovenantObligationTriggerCriteriaDetails = field(
+        default=None,
+        metadata={
+            "name": "triggerCriteria",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     accounting_details: None | LoanCovenantObligationAccountingDetails = field(
         default=None,
@@ -62681,15 +62557,15 @@ class PartyProfile(AbstractPartyProfile):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_instruction_details: list[
-        ApplicableSettlementInstructionDetails
-    ] = field(
-        default_factory=list,
-        metadata={
-            "name": "settlementInstructionDetails",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    settlement_instruction_details: list[ApplicableSettlementInstructionDetails] = (
+        field(
+            default_factory=list,
+            metadata={
+                "name": "settlementInstructionDetails",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
 
 
@@ -63353,14 +63229,12 @@ class StubCalculationPeriodAmount:
     class Meta:
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    calculation_period_dates_reference: CalculationPeriodDatesReference = (
-        field(
-            metadata={
-                "name": "calculationPeriodDatesReference",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            }
-        )
+    calculation_period_dates_reference: CalculationPeriodDatesReference = field(
+        metadata={
+            "name": "calculationPeriodDatesReference",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        }
     )
     initial_stub: None | StubValue = field(
         default=None,
@@ -66611,9 +66485,7 @@ class CommodityReturnLeg1(CommodityPerformanceSwapLeg1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_schedule: (
-        None | CommodityCalculationPeriodsSchedule
-    ) = field(
+    calculation_periods_schedule: None | CommodityCalculationPeriodsSchedule = field(
         default=None,
         metadata={
             "name": "calculationPeriodsSchedule",
@@ -66639,15 +66511,15 @@ class CommodityReturnLeg1(CommodityPerformanceSwapLeg1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     relative_payment_dates: None | CommodityRelativePaymentDates = field(
         default=None,
@@ -66813,9 +66685,7 @@ class CommodityVarianceLeg1(CommodityPerformanceSwapLeg1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_schedule: (
-        None | CommodityCalculationPeriodsSchedule
-    ) = field(
+    calculation_periods_schedule: None | CommodityCalculationPeriodsSchedule = field(
         default=None,
         metadata={
             "name": "calculationPeriodsSchedule",
@@ -66841,15 +66711,15 @@ class CommodityVarianceLeg1(CommodityPerformanceSwapLeg1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_dates_reference: (
-        None | CalculationPeriodsDatesReference
-    ) = field(
-        default=None,
-        metadata={
-            "name": "calculationPeriodsDatesReference",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    calculation_periods_dates_reference: None | CalculationPeriodsDatesReference = (
+        field(
+            default=None,
+            metadata={
+                "name": "calculationPeriodsDatesReference",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     relative_payment_dates: None | CommodityRelativePaymentDates = field(
         default=None,
@@ -69271,15 +69141,13 @@ class SingleUnderlyer:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    average_daily_trading_volume: None | AverageDailyTradingVolumeLimit = (
-        field(
-            default=None,
-            metadata={
-                "name": "averageDailyTradingVolume",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    average_daily_trading_volume: None | AverageDailyTradingVolumeLimit = field(
+        default=None,
+        metadata={
+            "name": "averageDailyTradingVolume",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     depository_receipt: None | bool = field(
         default=None,
@@ -70649,15 +70517,13 @@ class LoanAllocationSettlement1(AbstractLoanAllocationSettlementEvent):
         name = "LoanAllocationSettlement"
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    funding_factors: None | LoanTradingCounterpartySettlementFundingFactors = (
-        field(
-            default=None,
-            metadata={
-                "name": "fundingFactors",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    funding_factors: None | LoanTradingCounterpartySettlementFundingFactors = field(
+        default=None,
+        metadata={
+            "name": "fundingFactors",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
 
 
@@ -71037,15 +70903,13 @@ class RegulatoryReportingCollateralization:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    collateralized_exposure_grouping: None | CollateralizedExposureGrouping = (
-        field(
-            default=None,
-            metadata={
-                "name": "collateralizedExposureGrouping",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    collateralized_exposure_grouping: None | CollateralizedExposureGrouping = field(
+        default=None,
+        metadata={
+            "name": "collateralizedExposureGrouping",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     collateralization_type: None | CollateralizationType = field(
         default=None,
@@ -73334,9 +73198,7 @@ class CommodityBasketOption1(OptionAbstract):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_schedule: (
-        None | CommodityCalculationPeriodsSchedule
-    ) = field(
+    calculation_periods_schedule: None | CommodityCalculationPeriodsSchedule = field(
         default=None,
         metadata={
             "name": "calculationPeriodsSchedule",
@@ -73368,9 +73230,7 @@ class CommodityBasketOption1(OptionAbstract):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    strike_price_underlying_reference: (
-        None | StrikePriceUnderlyingReference
-    ) = field(
+    strike_price_underlying_reference: None | StrikePriceUnderlyingReference = field(
         default=None,
         metadata={
             "name": "strikePriceUnderlyingReference",
@@ -73450,15 +73310,13 @@ class CommodityBasketOption1(OptionAbstract):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementDisruption",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = field(
+        default=None,
+        metadata={
+            "name": "settlementDisruption",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     rounding: None | Rounding = field(
         default=None,
@@ -73559,9 +73417,7 @@ class CommodityDigitalOption1(OptionAbstract):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_schedule: (
-        None | CommodityCalculationPeriodsSchedule
-    ) = field(
+    calculation_periods_schedule: None | CommodityCalculationPeriodsSchedule = field(
         default=None,
         metadata={
             "name": "calculationPeriodsSchedule",
@@ -73653,15 +73509,13 @@ class CommodityDigitalOption1(OptionAbstract):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementDisruption",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = field(
+        default=None,
+        metadata={
+            "name": "settlementDisruption",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     rounding: None | Rounding = field(
         default=None,
@@ -73758,15 +73612,13 @@ class CommodityForward1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementDisruption",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = field(
+        default=None,
+        metadata={
+            "name": "settlementDisruption",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     rounding: None | Rounding = field(
         default=None,
@@ -73877,15 +73729,13 @@ class CommodityPerformanceSwapBase(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementDisruption",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = field(
+        default=None,
+        metadata={
+            "name": "settlementDisruption",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     rounding: None | Rounding = field(
         default=None,
@@ -74062,15 +73912,13 @@ class CommoditySwap1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementDisruption",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = field(
+        default=None,
+        metadata={
+            "name": "settlementDisruption",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     rounding: None | Rounding = field(
         default=None,
@@ -74239,15 +74087,13 @@ class CommoditySwaptionUnderlying:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementDisruption",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = field(
+        default=None,
+        metadata={
+            "name": "settlementDisruption",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     rounding: None | Rounding = field(
         default=None,
@@ -75050,9 +74896,7 @@ class RequestRetransmission1(NonCorrectableRequestMessage):
 
 
 @dataclass(kw_only=True)
-class RequestTradeReferenceInformationUpdateRetracted1(
-    NonCorrectableRequestMessage
-):
+class RequestTradeReferenceInformationUpdateRetracted1(NonCorrectableRequestMessage):
     """
     Defines the structure for a message retracting a request to updated
     information about trade.
@@ -75632,9 +75476,7 @@ class TradeChangeAdviceAcknowledgement(EventRequestAcknowledgement):
 
 
 @dataclass(kw_only=True)
-class TradeReferenceInformationUpdateAcknowledgement(
-    EventRequestAcknowledgement
-):
+class TradeReferenceInformationUpdateAcknowledgement(EventRequestAcknowledgement):
     class Meta:
         name = "tradeReferenceInformationUpdateAcknowledgement"
         namespace = "http://www.fpml.org/FpML-5/confirmation"
@@ -75882,15 +75724,13 @@ class CommoditySwaption1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementDisruption",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = field(
+        default=None,
+        metadata={
+            "name": "settlementDisruption",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     rounding: None | Rounding = field(
         default=None,
@@ -77008,15 +76848,13 @@ class LoanLegalActionNotification1(AbstractServicingNotification):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    facility_prepayment_fee_payment: list[FacilityPrepaymentFeePayment] = (
-        field(
-            default_factory=list,
-            metadata={
-                "name": "facilityPrepaymentFeePayment",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    facility_prepayment_fee_payment: list[FacilityPrepaymentFeePayment] = field(
+        default_factory=list,
+        metadata={
+            "name": "facilityPrepaymentFeePayment",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     facility_prepayment: list[FacilityPrepayment] = field(
         default_factory=list,
@@ -77940,9 +77778,7 @@ class RequestRetransmission(RequestRetransmission1):
 
 
 @dataclass(kw_only=True)
-class RequestTradeReferenceInformationUpdate(
-    RequestTradeReferenceInformationUpdate1
-):
+class RequestTradeReferenceInformationUpdate(RequestTradeReferenceInformationUpdate1):
     class Meta:
         name = "requestTradeReferenceInformationUpdate"
         namespace = "http://www.fpml.org/FpML-5/confirmation"
@@ -78150,9 +77986,7 @@ class CommodityOption1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    calculation_periods_schedule: (
-        None | CommodityCalculationPeriodsSchedule
-    ) = field(
+    calculation_periods_schedule: None | CommodityCalculationPeriodsSchedule = field(
         default=None,
         metadata={
             "name": "calculationPeriodsSchedule",
@@ -78191,15 +78025,13 @@ class CommodityOption1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    notional_quantity_schedule: None | CommodityNotionalQuantitySchedule = (
-        field(
-            default=None,
-            metadata={
-                "name": "notionalQuantitySchedule",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    notional_quantity_schedule: None | CommodityNotionalQuantitySchedule = field(
+        default=None,
+        metadata={
+            "name": "notionalQuantitySchedule",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     notional_quantity: None | CommodityNotionalQuantity = field(
         default=None,
@@ -78309,9 +78141,7 @@ class CommodityOption1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    weather_calculation_periods_reference: (
-        None | CalculationPeriodsReference
-    ) = field(
+    weather_calculation_periods_reference: None | CalculationPeriodsReference = field(
         default=None,
         metadata={
             "name": "weatherCalculationPeriodsReference",
@@ -78374,15 +78204,13 @@ class CommodityOption1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = (
-        field(
-            default=None,
-            metadata={
-                "name": "settlementDisruption",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    settlement_disruption: None | CommodityBullionSettlementDisruptionEnum = field(
+        default=None,
+        metadata={
+            "name": "settlementDisruption",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     rounding: None | Rounding = field(
         default=None,
@@ -78634,15 +78462,13 @@ class FacilityNotification1(AbstractFacilityNotification):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    facility_prepayment_fee_payment: None | FacilityPrepaymentFeePayment = (
-        field(
-            default=None,
-            metadata={
-                "name": "facilityPrepaymentFeePayment",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    facility_prepayment_fee_payment: None | FacilityPrepaymentFeePayment = field(
+        default=None,
+        metadata={
+            "name": "facilityPrepaymentFeePayment",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     facility_prepayment: None | FacilityPrepayment = field(
         default=None,
@@ -79108,15 +78934,13 @@ class LoanBulkServicingNotification1(AbstractContractNotification):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    facility_prepayment_fee_payment: list[FacilityPrepaymentFeePayment] = (
-        field(
-            default_factory=list,
-            metadata={
-                "name": "facilityPrepaymentFeePayment",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    facility_prepayment_fee_payment: list[FacilityPrepaymentFeePayment] = field(
+        default_factory=list,
+        metadata={
+            "name": "facilityPrepaymentFeePayment",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     facility_prepayment: list[FacilityPrepayment] = field(
         default_factory=list,
@@ -79497,15 +79321,13 @@ class LoanContractNotification1(AbstractContractNotification):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    legacy_interest_capitalization: None | LegacyInterestCapitalization = (
-        field(
-            default=None,
-            metadata={
-                "name": "legacyInterestCapitalization",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    legacy_interest_capitalization: None | LegacyInterestCapitalization = field(
+        default=None,
+        metadata={
+            "name": "legacyInterestCapitalization",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     interest_payment: None | InterestPayment = field(
         default=None,
@@ -80270,9 +80092,7 @@ class EquitySwapTransactionSupplement1(ReturnSwapBase):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    optional_early_termination_electing_party_reference: (
-        None | PartyReference
-    ) = field(
+    optional_early_termination_electing_party_reference: None | PartyReference = field(
         default=None,
         metadata={
             "name": "optionalEarlyTerminationElectingPartyReference",
@@ -80511,9 +80331,7 @@ class CorrelationSwap(CorrelationSwap1):
 
 
 @dataclass(kw_only=True)
-class DividendSwapOptionTransactionSupplement(
-    DividendSwapOptionTransactionSupplement1
-):
+class DividendSwapOptionTransactionSupplement(DividendSwapOptionTransactionSupplement1):
     """
     Specifies the structure of the dividend swap transaction supplement.
     """
@@ -80598,9 +80416,7 @@ class VolatilitySwap(VolatilitySwap1):
 
 
 @dataclass(kw_only=True)
-class VolatilitySwapTransactionSupplement(
-    VolatilitySwapTransactionSupplement1
-):
+class VolatilitySwapTransactionSupplement(VolatilitySwapTransactionSupplement1):
     class Meta:
         name = "volatilitySwapTransactionSupplement"
         namespace = "http://www.fpml.org/FpML-5/confirmation"
@@ -80631,9 +80447,7 @@ class ReturnSwap(ReturnSwap1):
 
 
 @dataclass(kw_only=True)
-class VarianceOptionTransactionSupplement(
-    VarianceOptionTransactionSupplement1
-):
+class VarianceOptionTransactionSupplement(VarianceOptionTransactionSupplement1):
     """
     Specifies the structure of a variance option.
     """
@@ -80707,15 +80521,13 @@ class Strategy1(Product1):
         name = "Strategy"
         target_namespace = "http://www.fpml.org/FpML-5/confirmation"
 
-    strategy_component_identifier: list[StrategyComponentIdentification] = (
-        field(
-            default_factory=list,
-            metadata={
-                "name": "strategyComponentIdentifier",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    strategy_component_identifier: list[StrategyComponentIdentification] = field(
+        default_factory=list,
+        metadata={
+            "name": "strategyComponentIdentifier",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     premium_product_reference: None | ProductReference = field(
         default=None,
@@ -80751,15 +80563,15 @@ class Strategy1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    variance_swap_transaction_supplement: list[
-        VarianceSwapTransactionSupplement
-    ] = field(
-        default_factory=list,
-        metadata={
-            "name": "varianceSwapTransactionSupplement",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    variance_swap_transaction_supplement: list[VarianceSwapTransactionSupplement] = (
+        field(
+            default_factory=list,
+            metadata={
+                "name": "varianceSwapTransactionSupplement",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     variance_swap: list[VarianceSwap] = field(
         default_factory=list,
@@ -80779,9 +80591,7 @@ class Strategy1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    equity_swap_transaction_supplement: list[
-        EquitySwapTransactionSupplement
-    ] = field(
+    equity_swap_transaction_supplement: list[EquitySwapTransactionSupplement] = field(
         default_factory=list,
         metadata={
             "name": "equitySwapTransactionSupplement",
@@ -80874,15 +80684,15 @@ class Strategy1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    dividend_swap_transaction_supplement: list[
-        DividendSwapTransactionSupplement
-    ] = field(
-        default_factory=list,
-        metadata={
-            "name": "dividendSwapTransactionSupplement",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    dividend_swap_transaction_supplement: list[DividendSwapTransactionSupplement] = (
+        field(
+            default_factory=list,
+            metadata={
+                "name": "dividendSwapTransactionSupplement",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     dividend_swap_option_transaction_supplement: list[
         DividendSwapOptionTransactionSupplement
@@ -80894,15 +80704,15 @@ class Strategy1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    equity_option_transaction_supplement: list[
-        EquityOptionTransactionSupplement
-    ] = field(
-        default_factory=list,
-        metadata={
-            "name": "equityOptionTransactionSupplement",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    equity_option_transaction_supplement: list[EquityOptionTransactionSupplement] = (
+        field(
+            default_factory=list,
+            metadata={
+                "name": "equityOptionTransactionSupplement",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     equity_option: list[EquityOption] = field(
         default_factory=list,
@@ -81007,15 +80817,13 @@ class Strategy1(Product1):
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    fx_forward_volatility_agreement: list[FxForwardVolatilityAgreement] = (
-        field(
-            default_factory=list,
-            metadata={
-                "name": "fxForwardVolatilityAgreement",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    fx_forward_volatility_agreement: list[FxForwardVolatilityAgreement] = field(
+        default_factory=list,
+        metadata={
+            "name": "fxForwardVolatilityAgreement",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     fx_flexible_forward: list[FxFlexibleForward] = field(
         default_factory=list,
@@ -81274,15 +81082,15 @@ class Trade:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    variance_swap_transaction_supplement: (
-        None | VarianceSwapTransactionSupplement
-    ) = field(
-        default=None,
-        metadata={
-            "name": "varianceSwapTransactionSupplement",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    variance_swap_transaction_supplement: None | VarianceSwapTransactionSupplement = (
+        field(
+            default=None,
+            metadata={
+                "name": "varianceSwapTransactionSupplement",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     variance_swap: None | VarianceSwap = field(
         default=None,
@@ -81302,9 +81110,7 @@ class Trade:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    equity_swap_transaction_supplement: (
-        None | EquitySwapTransactionSupplement
-    ) = field(
+    equity_swap_transaction_supplement: None | EquitySwapTransactionSupplement = field(
         default=None,
         metadata={
             "name": "equitySwapTransactionSupplement",
@@ -81397,15 +81203,15 @@ class Trade:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    dividend_swap_transaction_supplement: (
-        None | DividendSwapTransactionSupplement
-    ) = field(
-        default=None,
-        metadata={
-            "name": "dividendSwapTransactionSupplement",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    dividend_swap_transaction_supplement: None | DividendSwapTransactionSupplement = (
+        field(
+            default=None,
+            metadata={
+                "name": "dividendSwapTransactionSupplement",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     dividend_swap_option_transaction_supplement: (
         None | DividendSwapOptionTransactionSupplement
@@ -81417,15 +81223,15 @@ class Trade:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    equity_option_transaction_supplement: (
-        None | EquityOptionTransactionSupplement
-    ) = field(
-        default=None,
-        metadata={
-            "name": "equityOptionTransactionSupplement",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    equity_option_transaction_supplement: None | EquityOptionTransactionSupplement = (
+        field(
+            default=None,
+            metadata={
+                "name": "equityOptionTransactionSupplement",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     equity_option: None | EquityOption = field(
         default=None,
@@ -81530,15 +81336,13 @@ class Trade:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    fx_forward_volatility_agreement: None | FxForwardVolatilityAgreement = (
-        field(
-            default=None,
-            metadata={
-                "name": "fxForwardVolatilityAgreement",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    fx_forward_volatility_agreement: None | FxForwardVolatilityAgreement = field(
+        default=None,
+        metadata={
+            "name": "fxForwardVolatilityAgreement",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     fx_flexible_forward: None | FxFlexibleForward = field(
         default=None,
@@ -82100,15 +81904,15 @@ class PhysicalSettlement:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    variance_swap_transaction_supplement: (
-        None | VarianceSwapTransactionSupplement
-    ) = field(
-        default=None,
-        metadata={
-            "name": "varianceSwapTransactionSupplement",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    variance_swap_transaction_supplement: None | VarianceSwapTransactionSupplement = (
+        field(
+            default=None,
+            metadata={
+                "name": "varianceSwapTransactionSupplement",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     variance_swap: None | VarianceSwap = field(
         default=None,
@@ -82128,9 +81932,7 @@ class PhysicalSettlement:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    equity_swap_transaction_supplement: (
-        None | EquitySwapTransactionSupplement
-    ) = field(
+    equity_swap_transaction_supplement: None | EquitySwapTransactionSupplement = field(
         default=None,
         metadata={
             "name": "equitySwapTransactionSupplement",
@@ -82223,15 +82025,15 @@ class PhysicalSettlement:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    dividend_swap_transaction_supplement: (
-        None | DividendSwapTransactionSupplement
-    ) = field(
-        default=None,
-        metadata={
-            "name": "dividendSwapTransactionSupplement",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    dividend_swap_transaction_supplement: None | DividendSwapTransactionSupplement = (
+        field(
+            default=None,
+            metadata={
+                "name": "dividendSwapTransactionSupplement",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     dividend_swap_option_transaction_supplement: (
         None | DividendSwapOptionTransactionSupplement
@@ -82243,15 +82045,15 @@ class PhysicalSettlement:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    equity_option_transaction_supplement: (
-        None | EquityOptionTransactionSupplement
-    ) = field(
-        default=None,
-        metadata={
-            "name": "equityOptionTransactionSupplement",
-            "type": "Element",
-            "namespace": "http://www.fpml.org/FpML-5/confirmation",
-        },
+    equity_option_transaction_supplement: None | EquityOptionTransactionSupplement = (
+        field(
+            default=None,
+            metadata={
+                "name": "equityOptionTransactionSupplement",
+                "type": "Element",
+                "namespace": "http://www.fpml.org/FpML-5/confirmation",
+            },
+        )
     )
     equity_option: None | EquityOption = field(
         default=None,
@@ -82356,15 +82158,13 @@ class PhysicalSettlement:
             "namespace": "http://www.fpml.org/FpML-5/confirmation",
         },
     )
-    fx_forward_volatility_agreement: None | FxForwardVolatilityAgreement = (
-        field(
-            default=None,
-            metadata={
-                "name": "fxForwardVolatilityAgreement",
-                "type": "Element",
-                "namespace": "http://www.fpml.org/FpML-5/confirmation",
-            },
-        )
+    fx_forward_volatility_agreement: None | FxForwardVolatilityAgreement = field(
+        default=None,
+        metadata={
+            "name": "fxForwardVolatilityAgreement",
+            "type": "Element",
+            "namespace": "http://www.fpml.org/FpML-5/confirmation",
+        },
     )
     fx_flexible_forward: None | FxFlexibleForward = field(
         default=None,

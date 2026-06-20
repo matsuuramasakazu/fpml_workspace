@@ -1,8 +1,6 @@
 import dataclasses
 from typing import Any, Dict
 
-from fpml.confirmation import ReferenceAbstract
-
 
 class ReferenceResolver:
     """FpMLモデル内のhref参照を解決するためのリゾルバー。"""

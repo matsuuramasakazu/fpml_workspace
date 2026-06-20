@@ -1,5 +1,6 @@
 import sys
-sys.path.append('.')
+
+sys.path.append(".")
 import fpml.confirmation as conf
 
 try:
