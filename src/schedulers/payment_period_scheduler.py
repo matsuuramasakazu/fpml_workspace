@@ -10,38 +10,50 @@ from fpml.confirmation import (
     PaymentCalculationPeriod,
 )
 from src.calendars.business_calendar import BusinessCalendar
+from src.schedulers.calculation_period_scheduler import CalculationPeriodScheduler
 from src.schedulers.date_adjuster import DateAdjuster
 from src.schedulers.period_date_generator import PeriodDateGenerator
 from src.schedulers.reference_resolver import ReferenceResolver
+from src.schedulers.step_schedule_resolver_factory import StepScheduleResolverFactory
 
 
 class PaymentPeriodScheduler:
     """計算期間（CalculationPeriod）を支払期間（PaymentCalculationPeriod）に集約し、支払日の調整を担当するクラス。"""
 
-    def __init__(self, calendar: BusinessCalendar, resolver: ReferenceResolver):
+    def __init__(self, calendar: BusinessCalendar, ref_resolver: ReferenceResolver):
         """
         Args:
             calendar: 営業日判定・日付調整を行うBusinessCalendarインスタンス
-            resolver: 参照解決を行うReferenceResolverインスタンス
+            ref_resolver: 参照解決を行うReferenceResolverインスタンス
         """
-        self._adjuster = DateAdjuster(calendar, resolver)
+        self._adjuster = DateAdjuster(calendar, ref_resolver)
+        self._calculation_period_scheduler = CalculationPeriodScheduler(
+            calendar, ref_resolver
+        )
 
-    def aggregate_periods(
-        self, calc_periods: List[CalculationPeriod], stream: InterestRateStream
+    def generate_payment_periods(
+        self,
+        stream: InterestRateStream,
+        step_schedule_resolver_factory: StepScheduleResolverFactory,
     ) -> List[PaymentCalculationPeriod]:
-        """計算期間のリストを支払頻度に合わせて集約し、支払日の休日調整を行って支払期間のリストを返します。
+        """InterestRateStream パラメータから PaymentCalculationPeriod スケジュールを展開します。
 
         Args:
-            calc_periods: 計算済みの CalculationPeriod オブジェクトのリスト
-            stream: 金利ストリーム情報
+            stream: FpML の金利ストリーム（レグ）情報
+            step_schedule_resolver_factory: 各種ステップスケジュールリゾルバーを保持するFactory
 
         Returns:
-            集約・調整された PaymentCalculationPeriod オブジェクトのリスト
+            展開・調整された支払計算期間（PaymentCalculationPeriod）のリスト
         """
-        # 1. 支払 unadjusted dates 系列の生成
+        # 1. 計算期間スケジュールの生成
+        calc_periods = self._calculation_period_scheduler.generate_periods(
+            stream, step_schedule_resolver_factory
+        )
+
+        # 2. 支払 unadjusted dates 系列の生成
         payment_unadjusted_targets = self._generate_payment_targets(stream)
 
-        # 2. 計算期間を支払ターゲットに集約
+        # 3. 計算期間を支払ターゲットに集約し、休日調整を適用
         return self._aggregate_to_payment_periods(
             calc_periods, payment_unadjusted_targets, stream
         )

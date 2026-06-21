@@ -1,73 +1,53 @@
-from pathlib import Path
-
-from xsdata.formats.dataclass.parsers import XmlParser
-from xsdata.formats.dataclass.serializers import XmlSerializer
-from xsdata.formats.dataclass.serializers.config import SerializerConfig
-
 from fpml.confirmation import Cashflows, DataDocument
 from src.calendars.business_calendar import BusinessCalendar
+from src.schedulers.payment_period_scheduler import PaymentPeriodScheduler
+from src.schedulers.principal_exchange_scheduler import PrincipalExchangeScheduler
 from src.schedulers.reference_resolver import ReferenceResolver
-from src.schedulers.swap_stream_scheduler import SwapStreamScheduler
+from src.schedulers.step_schedule_resolver_factory import StepScheduleResolverFactory
 from src.validators import FpmlValidator
 
 
 class CashflowExpander:
+    """FpMLのキャッシュフロー展開ロジックを担当するドメインサービス。
+
+    ファイル入出力等のインフラ処理は本クラスの責務外とし、DataDocument
+    オブジェクトに対する展開ロジックのみを提供します。
+    """
+
     @staticmethod
-    def expand_cashflows(input_file: str, output_file: str, config_dir: str) -> bool:
-        """FpML XMLファイルを読み込み、キャッシュフローを展開した上で、シリアライズして指定されたパスに出力します。
+    def expand_cashflows(data_document: DataDocument, config_dir: str) -> None:
+        """FpML XMLドキュメントオブジェクトを受け取り、キャッシュフローを展開した上でインプレースで更新します。
 
         Args:
-            input_file: 入力となるFpML XMLファイルのパス
-            output_file: 出力先となるFpML XMLファイルのパス
+            data_document: 展開対象となる FpML DataDocument オブジェクト
             config_dir: カレンダー等の設定ディレクトリパス
-
-        Returns:
-            bool: 処理が正常に完了した場合はTrue
         """
-        input_path = Path(input_file)
-        output_path = Path(output_file)
-
-        parser = XmlParser()
-        data_document = parser.from_path(input_path, DataDocument)
-
-        # 1.5. 入力データのバリデーション
+        # 1. 入力データのバリデーション
         validator = FpmlValidator()
         validator.validate(data_document)
 
         # 2. カレンダー、リゾルバー、スケジューラーの初期化
         calendar = BusinessCalendar(config_dir=config_dir)
-        resolver = ReferenceResolver(data_document)
-        scheduler = SwapStreamScheduler(calendar, resolver)
+        ref_resolver = ReferenceResolver(data_document)
+        payment_scheduler = PaymentPeriodScheduler(calendar, ref_resolver)
+        principal_scheduler = PrincipalExchangeScheduler(calendar, ref_resolver)
 
         # 3. キャッシュフローの展開と埋め込み
         if data_document.trade:
             for trade in data_document.trade:
                 if trade.swap is not None:
                     for stream in trade.swap.swap_stream:
-                        payment_periods = scheduler.generate_payment_periods(stream)
-                        principal_exchanges = scheduler.generate_principal_exchanges(
-                            stream
+                        step_schedule_resolver_factory = StepScheduleResolverFactory(
+                            stream, ref_resolver
+                        )
+                        payment_periods = payment_scheduler.generate_payment_periods(
+                            stream, step_schedule_resolver_factory
+                        )
+                        principal_exchanges = principal_scheduler.generate_exchanges(
+                            stream, step_schedule_resolver_factory
                         )
                         stream.cashflows = Cashflows(
                             cashflows_match_parameters=True,
                             payment_calculation_period=payment_periods,
                             principal_exchange=principal_exchanges,
                         )
-
-        # 4. XMLシリアライザの初期化と書き出し
-        config = SerializerConfig(indent="  ")
-        serializer = XmlSerializer(config=config)
-
-        # 名前空間プレフィックスなし（デフォルト名前空間）で出力するためのマップ
-        ns_map = {
-            "": "http://www.fpml.org/FpML-5/confirmation",
-            "xsi": "http://www.w3.org/2001/XMLSchema-instance",
-        }
-
-        # 出力先ディレクトリの確保
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(output_path, "w", encoding="utf-8") as f:
-            serializer.write(f, data_document, ns_map=ns_map)
-
-        return True

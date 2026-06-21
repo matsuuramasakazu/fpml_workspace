@@ -17,73 +17,34 @@ from src.schedulers.day_count_calculator import DayCountCalculator
 from src.schedulers.fixing_scheduler import FixingScheduler
 from src.schedulers.period_date_generator import PeriodDateGenerator
 from src.schedulers.reference_resolver import ReferenceResolver
+from src.schedulers.step_schedule_resolver import StepScheduleResolver
+from src.schedulers.step_schedule_resolver_factory import StepScheduleResolverFactory
 
 
 class CalculationPeriodScheduler:
     """計算期間（CalculationPeriod）のスケジュールの生成を担当するクラス。"""
 
-    def __init__(self, calendar: BusinessCalendar, resolver: ReferenceResolver):
+    def __init__(self, calendar: BusinessCalendar, ref_resolver: ReferenceResolver):
         """
         Args:
             calendar: 営業日判定・日付調整を行うBusinessCalendarインスタンス
-            resolver: 参照解決を行うReferenceResolverインスタンス
+            ref_resolver: 参照解決を行うReferenceResolverインスタンス
         """
         self._calendar = calendar
-        self._resolver = resolver
-        self._adjuster = DateAdjuster(calendar, resolver)
-        self._fixing_scheduler = FixingScheduler(calendar, resolver)
+        self._ref_resolver = ref_resolver
+        self._adjuster = DateAdjuster(calendar, ref_resolver)
+        self._fixing_scheduler = FixingScheduler(calendar, ref_resolver)
 
-    def _resolve_schedule_value(
-        self, schedule: Schedule | None, ref_date: date
-    ) -> Decimal | None:
-        """指定された基準日（ref_date）時点のスケジュール値を解決します。"""
-        if schedule is None:
-            return None
-
-        initial_value = schedule.initial_value
-        steps = getattr(schedule, "step", [])
-        if not steps:
-            return initial_value
-
-        # step_date でソート
-        sorted_steps = sorted(steps, key=lambda s: s.step_date.to_date())
-
-        resolved_value = initial_value
-        for step in sorted_steps:
-            if step.step_date.to_date() <= ref_date:
-                resolved_value = step.step_value
-            else:
-                break
-
-        return resolved_value
-
-    def resolve_notional(self, calc_params, ref_date: date) -> Decimal | None:
-        """指定された基準日（ref_date）時点の想定元本を解決します。"""
-        if calc_params.fx_linked_notional_schedule is not None:
-            return None
-
-        notional_schedule = calc_params.notional_schedule
-        if notional_schedule is None:
-            return None
-
-        step_schedule = None
-        if notional_schedule.notional_step_schedule is not None:
-            step_schedule = notional_schedule.notional_step_schedule
-        elif notional_schedule.notional_step_parameters_reference is not None:
-            step_schedule = self._resolver.resolve(
-                notional_schedule.notional_step_parameters_reference
-            )
-
-        if step_schedule is None:
-            return None
-
-        return self._resolve_schedule_value(step_schedule, ref_date)
-
-    def generate_periods(self, stream: InterestRateStream) -> List[CalculationPeriod]:
+    def generate_periods(
+        self,
+        stream: InterestRateStream,
+        step_schedule_resolver_factory: StepScheduleResolverFactory,
+    ) -> List[CalculationPeriod]:
         """InterestRateStream パラメータから CalculationPeriod スケジュールを展開します。
 
         Args:
             stream: 金利ストリーム情報
+            step_schedule_resolver_factory: 各種ステップスケジュールリゾルバーを保持するFactory
 
         Returns:
             生成された CalculationPeriod のリスト
@@ -100,7 +61,9 @@ class CalculationPeriodScheduler:
         )
 
         # 4. 各計算期間の構築
-        return self._build_calculation_periods(unadjusted_dates, adjusted_dates, stream)
+        return self._build_calculation_periods(
+            unadjusted_dates, adjusted_dates, stream, step_schedule_resolver_factory
+        )
 
     def _resolve_adjusted_boundaries(
         self, stream: InterestRateStream
@@ -195,6 +158,7 @@ class CalculationPeriodScheduler:
         unadjusted_dates: List[date],
         adjusted_dates: List[date],
         stream: InterestRateStream,
+        step_schedule_resolver_factory: StepScheduleResolverFactory,
     ) -> List[CalculationPeriod]:
         """計算期間オブジェクト（CalculationPeriod）のリストを構築します。"""
         calc_params = stream.calculation_period_amount.calculation
@@ -215,12 +179,12 @@ class CalculationPeriodScheduler:
                 day_count_calc.calculate_year_fraction(astart, aend), 12
             )
 
-            # 想定元本の解決
-            notional = self.resolve_notional(calc_params, ustart)
+            # 想定元本の解決 (ループ外で生成されたリゾルバーを利用)
+            notional = step_schedule_resolver_factory.notional_resolver.resolve(ustart)
 
             # 固定金利、浮動金利、スタブの解決
             fixed_rate, floating_rate_def, stub_amount = self._resolve_rates_for_period(
-                ustart, uend, astart, aend, stream
+                ustart, uend, astart, aend, stream, step_schedule_resolver_factory
             )
 
             # FxLinkedNotionalAmountの構築
@@ -253,6 +217,7 @@ class CalculationPeriodScheduler:
         astart: date,
         aend: date,
         stream: InterestRateStream,
+        step_schedule_resolver_factory: StepScheduleResolverFactory,
     ) -> Tuple[Decimal | None, Any | None, Any | None]:
         """各期間に応じた適用金利（固定／浮動／スタブ設定）を解決します。"""
         calc_dates = stream.calculation_period_dates
@@ -269,13 +234,10 @@ class CalculationPeriodScheduler:
         is_initial_stub = first_regular is not None and ustart < first_regular
         is_final_stub = last_regular is not None and uend > last_regular
 
-        calc_params = stream.calculation_period_amount.calculation
-        fixed_rate_schedule = calc_params.fixed_rate_schedule
-
-        # デフォルトの金利設定
-        fixed_rate = self._resolve_schedule_value(fixed_rate_schedule, ustart)
+        # デフォルトの金利設定 (ループ外で生成されたリゾルバーを利用)
+        fixed_rate = step_schedule_resolver_factory.fixed_rate_resolver.resolve(ustart)
         floating_rate_def = self._fixing_scheduler.calculate_fixing(
-            astart, aend, stream, ustart
+            astart, aend, stream, step_schedule_resolver_factory, ustart
         )
         stub_amount = None
 

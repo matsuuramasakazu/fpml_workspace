@@ -1,8 +1,37 @@
 import tempfile
 import xml.etree.ElementTree as ET
+from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
+from xsdata.formats.dataclass.parsers import XmlParser
+from xsdata.formats.dataclass.serializers import XmlSerializer
+from xsdata.formats.dataclass.serializers.config import SerializerConfig
+
+from fpml.confirmation import DataDocument
 from src.cashflow_expander import CashflowExpander
+
+
+def run_expansion_pipeline(input_file: str, output_file: str, config_dir: str) -> bool:
+    input_path = Path(input_file)
+    output_path = Path(output_file)
+
+    parser = XmlParser()
+    data_document = parser.from_path(input_path, DataDocument)
+
+    CashflowExpander.expand_cashflows(data_document, config_dir)
+
+    config = SerializerConfig(indent="  ")
+    serializer = XmlSerializer(config=config)
+    ns_map = {
+        "": "http://www.fpml.org/FpML-5/confirmation",
+        "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+    }
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        serializer.write(f, data_document, ns_map=ns_map)
+    return True
 
 
 def test_basic_pipeline_roundtrip():
@@ -23,7 +52,7 @@ def test_basic_pipeline_roundtrip():
         output_file = Path(tmpdir) / "output_roundtrip.xml"
 
         # 基本パイプラインの実行
-        result = CashflowExpander.expand_cashflows(
+        result = run_expansion_pipeline(
             str(input_path), str(output_file), str(config_dir)
         )
 
@@ -45,8 +74,6 @@ def test_basic_pipeline_roundtrip():
 
 def test_pipeline_cashflow_expansion():
     """E2E test to verify cashflow expansion is executed and XML is schema-conformant."""
-    from datetime import date
-    from decimal import Decimal
 
     from xsdata.formats.dataclass.parsers import XmlParser
 
@@ -68,7 +95,7 @@ def test_pipeline_cashflow_expansion():
         output_file = Path(tmpdir) / "output_expanded.xml"
 
         # キャッシュフロー展開の実行
-        result = CashflowExpander.expand_cashflows(
+        result = run_expansion_pipeline(
             str(input_path), str(output_file), str(config_dir)
         )
 
@@ -107,8 +134,6 @@ def test_pipeline_cashflow_expansion():
 
 def test_pipeline_cross_currency_principal_exchange():
     """E2E test to verify cross-currency swap cashflow and principal exchange expansion using ird-ex052."""
-    from datetime import date
-    from decimal import Decimal
 
     from xsdata.formats.dataclass.parsers import XmlParser
 
@@ -128,7 +153,7 @@ def test_pipeline_cross_currency_principal_exchange():
     with tempfile.TemporaryDirectory() as tmpdir:
         output_file = Path(tmpdir) / "output_xccy.xml"
 
-        result = CashflowExpander.expand_cashflows(
+        result = run_expansion_pipeline(
             str(input_path), str(output_file), str(config_dir)
         )
 
@@ -183,7 +208,6 @@ def test_pipeline_cross_currency_principal_exchange():
 
 def test_pipeline_fx_linked_notional_swap():
     """E2E test to verify FX-linked notional swap cashflow expansion using ird-ex25."""
-    from datetime import date
 
     from xsdata.formats.dataclass.parsers import XmlParser
 
@@ -203,7 +227,7 @@ def test_pipeline_fx_linked_notional_swap():
     with tempfile.TemporaryDirectory() as tmpdir:
         output_file = Path(tmpdir) / "output_fxnotional.xml"
 
-        result = CashflowExpander.expand_cashflows(
+        result = run_expansion_pipeline(
             str(input_path), str(output_file), str(config_dir)
         )
 
@@ -254,7 +278,6 @@ def test_pipeline_fx_linked_notional_swap():
 
 def test_pipeline_rfr_observation_shift_ex44():
     """E2E test for RFR compound swap with Observation Shift using ird-ex44."""
-    from datetime import date
 
     from xsdata.formats.dataclass.parsers import XmlParser
 
@@ -274,7 +297,7 @@ def test_pipeline_rfr_observation_shift_ex44():
     with tempfile.TemporaryDirectory() as tmpdir:
         output_file = Path(tmpdir) / "output_ex44.xml"
 
-        result = CashflowExpander.expand_cashflows(
+        result = run_expansion_pipeline(
             str(input_path), str(output_file), str(config_dir)
         )
 
@@ -317,7 +340,6 @@ def test_pipeline_rfr_observation_shift_ex44():
 
 def test_pipeline_rfr_lookback_ex45():
     """E2E test for RFR compound swap with Lookback using ird-ex45."""
-    from datetime import date
 
     from xsdata.formats.dataclass.parsers import XmlParser
 
@@ -337,7 +359,7 @@ def test_pipeline_rfr_lookback_ex45():
     with tempfile.TemporaryDirectory() as tmpdir:
         output_file = Path(tmpdir) / "output_ex45.xml"
 
-        result = CashflowExpander.expand_cashflows(
+        result = run_expansion_pipeline(
             str(input_path), str(output_file), str(config_dir)
         )
 
@@ -374,8 +396,6 @@ def test_pipeline_rfr_lookback_ex45():
 
 def test_pipeline_arrears_stepup_fee_swap():
     """E2E test to verify Reset in Arrears swap cashflow expansion using ird-ex04."""
-    from datetime import date
-    from decimal import Decimal
 
     from xsdata.formats.dataclass.parsers import XmlParser
 
@@ -395,7 +415,7 @@ def test_pipeline_arrears_stepup_fee_swap():
     with tempfile.TemporaryDirectory() as tmpdir:
         output_file = Path(tmpdir) / "output_arrears_ex04.xml"
 
-        result = CashflowExpander.expand_cashflows(
+        result = run_expansion_pipeline(
             str(input_path), str(output_file), str(config_dir)
         )
 
@@ -459,8 +479,6 @@ def test_pipeline_arrears_stepup_fee_swap():
 
 def test_pipeline_compounding_swap_ex03():
     """E2E test to verify compounding swap cashflow expansion using ird-ex03."""
-    from datetime import date
-    from decimal import Decimal
 
     from xsdata.formats.dataclass.parsers import XmlParser
 
@@ -480,7 +498,7 @@ def test_pipeline_compounding_swap_ex03():
     with tempfile.TemporaryDirectory() as tmpdir:
         output_file = Path(tmpdir) / "output_compound_ex03.xml"
 
-        result = CashflowExpander.expand_cashflows(
+        result = run_expansion_pipeline(
             str(input_path), str(output_file), str(config_dir)
         )
 

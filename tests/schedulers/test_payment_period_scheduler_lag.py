@@ -15,6 +15,7 @@ from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.calculation_period_scheduler import CalculationPeriodScheduler
 from src.schedulers.payment_period_scheduler import PaymentPeriodScheduler
 from src.schedulers.reference_resolver import ReferenceResolver
+from src.schedulers.step_schedule_resolver_factory import StepScheduleResolverFactory
 
 
 def test_payment_period_scheduler_lag():
@@ -43,13 +44,12 @@ def test_payment_period_scheduler_lag():
     calendar = BusinessCalendar(config_dir="config")
     resolver = ReferenceResolver(doc)
 
-    # 計算期間を展開
-    calc_scheduler = CalculationPeriodScheduler(calendar, resolver)
-    calc_periods = calc_scheduler.generate_periods(fixed_stream)
-
-    # 支払期間を集約
+    # 支払期間の展開 (内部で計算期間も生成・集約される)
     pay_scheduler = PaymentPeriodScheduler(calendar, resolver)
-    periods = pay_scheduler.aggregate_periods(calc_periods, fixed_stream)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(fixed_stream, resolver)
+    periods = pay_scheduler.generate_payment_periods(
+        fixed_stream, step_schedule_resolver_factory
+    )
 
     assert len(periods) == 5
     # 第1期の終了日 1995-12-14 (木) に対して 2営業日 (GBLO, USNY) の支払遅延

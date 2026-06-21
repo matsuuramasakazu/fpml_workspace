@@ -1,7 +1,13 @@
 import argparse
 import logging
 import sys
+from pathlib import Path
 
+from xsdata.formats.dataclass.parsers import XmlParser
+from xsdata.formats.dataclass.serializers import XmlSerializer
+from xsdata.formats.dataclass.serializers.config import SerializerConfig
+
+from fpml.confirmation import DataDocument
 from src.cashflow_expander import CashflowExpander
 
 # ロガーの設定
@@ -38,15 +44,29 @@ def main():
     logger.debug(f"Config directory: {args.config}")
 
     try:
-        success = CashflowExpander.expand_cashflows(
-            args.input, args.output, args.config
-        )
-        if success:
-            logger.info("Cashflow expansion completed successfully.")
-            sys.exit(0)
-        else:
-            logger.error("Cashflow expansion failed.")
-            sys.exit(1)
+        input_path = Path(args.input)
+        output_path = Path(args.output)
+
+        parser = XmlParser()
+        data_document = parser.from_path(input_path, DataDocument)
+
+        # ドメインモデルに対してキャッシュフローを展開
+        CashflowExpander.expand_cashflows(data_document, args.config)
+
+        # XMLとして書き出し
+        config = SerializerConfig(indent="  ")
+        serializer = XmlSerializer(config=config)
+        ns_map = {
+            "": "http://www.fpml.org/FpML-5/confirmation",
+            "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        }
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            serializer.write(f, data_document, ns_map=ns_map)
+
+        logger.info("Cashflow expansion completed successfully.")
+        sys.exit(0)
     except Exception as e:
         logger.exception(f"Unexpected error during cashflow expansion: {e}")
         sys.exit(1)

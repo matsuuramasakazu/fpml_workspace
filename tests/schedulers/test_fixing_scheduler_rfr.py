@@ -14,6 +14,7 @@ from fpml.confirmation import (
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.fixing_scheduler import FixingScheduler
 from src.schedulers.reference_resolver import ReferenceResolver
+from src.schedulers.step_schedule_resolver_factory import StepScheduleResolverFactory
 
 
 def setup_stream_with_parameters(xml_path):
@@ -57,8 +58,11 @@ def test_fixing_scheduler_rfr_lookback():
     )
     calc_params.floating_rate_calculation.calculation_parameters.lockout = None
 
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
     floating_def = scheduler.calculate_fixing(
-        adjusted_start, adjusted_end, floating_stream
+        adjusted_start, adjusted_end, floating_stream, step_schedule_resolver_factory
     )
     assert floating_def is not None
 
@@ -108,8 +112,11 @@ def test_fixing_scheduler_rfr_observation_shift():
     )
     calc_params.floating_rate_calculation.calculation_parameters.lockout = None
 
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
     floating_def = scheduler.calculate_fixing(
-        adjusted_start, adjusted_end, floating_stream
+        adjusted_start, adjusted_end, floating_stream, step_schedule_resolver_factory
     )
     assert floating_def is not None
     assert len(floating_def.rate_observation) == 20
@@ -152,8 +159,11 @@ def test_fixing_scheduler_rfr_lockout():
         ObservationOffset(offset_days=5)
     )
 
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
     floating_def = scheduler.calculate_fixing(
-        adjusted_start, adjusted_end, floating_stream
+        adjusted_start, adjusted_end, floating_stream, step_schedule_resolver_factory
     )
     assert floating_def is not None
     assert len(floating_def.rate_observation) == 20
@@ -196,8 +206,11 @@ def test_fixing_scheduler_rfr_plain():
     )
     calc_params.floating_rate_calculation.calculation_parameters.lockout = None
 
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
     floating_def = scheduler.calculate_fixing(
-        adjusted_start, adjusted_end, floating_stream
+        adjusted_start, adjusted_end, floating_stream, step_schedule_resolver_factory
     )
     assert floating_def is not None
     assert len(floating_def.rate_observation) == 20

@@ -13,19 +13,19 @@ from src.schedulers.reference_resolver import ReferenceResolver
 class DateAdjuster:
     """FpML の BusinessDayAdjustments を解釈し、BusinessCalendar を用いて日付を調整するクラス。"""
 
-    def __init__(self, calendar: BusinessCalendar, resolver: ReferenceResolver):
+    def __init__(self, calendar: BusinessCalendar, ref_resolver: ReferenceResolver):
         """
         Args:
             calendar: 営業日判定・日付調整を行うBusinessCalendarインスタンス
-            resolver: FpMLドキュメント内のhref参照を解決するReferenceResolverインスタンス
+            ref_resolver: FpMLドキュメント内のhref参照を解決するReferenceResolverインスタンス
         """
         self._calendar = calendar
-        self._resolver = resolver
+        self._ref_resolver = ref_resolver
 
     def _resolve_business_centers(
         self, adjustments: BusinessDayAdjustments
     ) -> List[str]:
-        """BusinessDayAdjustments から、ビジネスセンターコード of リストを返します。
+        """BusinessDayAdjustments から、ビジネスセンターコードのリストを返します。
 
         直接の business_centers がある場合はそれを使用し、
         business_centers_reference がある場合は ReferenceResolver を用いて解決します。
@@ -35,7 +35,7 @@ class DateAdjuster:
         if adjustments.business_centers is not None:
             centers = adjustments.business_centers
         elif adjustments.business_centers_reference is not None:
-            centers = self._resolver.resolve(adjustments.business_centers_reference)
+            centers = self._ref_resolver.resolve(adjustments.business_centers_reference)
 
         if centers is None:
             # センターが未指定の場合はそのまま返す（調整なし）
@@ -84,7 +84,7 @@ class DateAdjuster:
         if business_centers is not None:
             centers = [bc.value for bc in business_centers.business_center if bc.value]
         elif business_centers_reference is not None:
-            centers_obj = self._resolver.resolve(business_centers_reference)
+            centers_obj = self._ref_resolver.resolve(business_centers_reference)
             centers = [bc.value for bc in centers_obj.business_center if bc.value]
 
         day_type = getattr(offset, "day_type", None)

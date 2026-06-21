@@ -11,56 +11,29 @@ from fpml.confirmation import (
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.date_adjuster import DateAdjuster
 from src.schedulers.reference_resolver import ReferenceResolver
+from src.schedulers.step_schedule_resolver import StepScheduleResolver
+from src.schedulers.step_schedule_resolver_factory import StepScheduleResolverFactory
 
 
 class FixingScheduler:
     """浮動金利レグに対する Fixing（金利決定）スケジュールの決定を担当するクラス。"""
 
-    def __init__(self, calendar: BusinessCalendar, resolver: ReferenceResolver):
+    def __init__(self, calendar: BusinessCalendar, ref_resolver: ReferenceResolver):
         """
         Args:
             calendar: 祝祭日カレンダーやビジネス営業日算出を行うBusinessCalendarインスタンス
-            resolver: 参照解決を行うReferenceResolverインスタンス
+            ref_resolver: 参照解決を行うReferenceResolverインスタンス
         """
         self._calendar = calendar
-        self._resolver = resolver
-        self._adjuster = DateAdjuster(calendar, resolver)
-
-    def _resolve_schedule_value(
-        self, schedule_or_list, ref_date: date
-    ) -> Decimal | None:
-        """指定された基準日（ref_date）時点のスケジュール値を解決します。"""
-        if not schedule_or_list:
-            return None
-
-        if isinstance(schedule_or_list, list):
-            if len(schedule_or_list) == 0:
-                return None
-            schedule = schedule_or_list[0]
-        else:
-            schedule = schedule_or_list
-
-        initial_value = schedule.initial_value
-        steps = getattr(schedule, "step", [])
-        if not steps:
-            return initial_value
-
-        sorted_steps = sorted(steps, key=lambda s: s.step_date.to_date())
-
-        resolved_value = initial_value
-        for step in sorted_steps:
-            if step.step_date.to_date() <= ref_date:
-                resolved_value = step.step_value
-            else:
-                break
-
-        return resolved_value
+        self._ref_resolver = ref_resolver
+        self._adjuster = DateAdjuster(calendar, ref_resolver)
 
     def calculate_fixing(
         self,
         adjusted_start: date,
         adjusted_end: date,
         stream: InterestRateStream,
+        step_schedule_resolver_factory: StepScheduleResolverFactory,
         unadjusted_start: date | None = None,
     ) -> FloatingRateDefinition | None:
         """計算期間の調整日を基準に、Fixing日を算出して FloatingRateDefinition を生成します。
@@ -69,6 +42,7 @@ class FixingScheduler:
             adjusted_start: 計算期間の調整済開始日
             adjusted_end: 計算期間の調整済終了日
             stream: FpML の金利ストリーム情報
+            step_schedule_resolver_factory: 各種ステップスケジュールリゾルバーを保持するFactory
             unadjusted_start: 計算期間の調整前開始日
 
         Returns:
@@ -84,11 +58,9 @@ class FixingScheduler:
         ref_date = unadjusted_start if unadjusted_start is not None else adjusted_start
 
         # spread と multiplier
-        spread = self._resolve_schedule_value(
-            floating_rate_calc.spread_schedule, ref_date
-        )
-        multiplier = self._resolve_schedule_value(
-            floating_rate_calc.floating_rate_multiplier_schedule, ref_date
+        spread = step_schedule_resolver_factory.spread_resolver.resolve(ref_date)
+        multiplier = step_schedule_resolver_factory.multiplier_resolver.resolve(
+            ref_date
         )
 
         # RFR (Modular Calculated Rate) の判定
@@ -105,7 +77,9 @@ class FixingScheduler:
                         if bc.value
                     ]
                 elif abd.business_centers_reference is not None:
-                    centers_obj = self._resolver.resolve(abd.business_centers_reference)
+                    centers_obj = self._ref_resolver.resolve(
+                        abd.business_centers_reference
+                    )
                     centers = [
                         bc.value for bc in centers_obj.business_center if bc.value
                     ]
@@ -122,7 +96,7 @@ class FixingScheduler:
                             if bc.value
                         ]
                     elif adj.business_centers_reference is not None:
-                        centers_obj = self._resolver.resolve(
+                        centers_obj = self._ref_resolver.resolve(
                             adj.business_centers_reference
                         )
                         centers = [

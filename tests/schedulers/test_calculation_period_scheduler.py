@@ -8,8 +8,9 @@ from xsdata.models.datatype import XmlDate as ModelXmlDate
 from fpml.confirmation import DataDocument
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.calculation_period_scheduler import CalculationPeriodScheduler
+from src.schedulers.payment_period_scheduler import PaymentPeriodScheduler
 from src.schedulers.reference_resolver import ReferenceResolver
-from src.schedulers.swap_stream_scheduler import SwapStreamScheduler
+from src.schedulers.step_schedule_resolver_factory import StepScheduleResolverFactory
 
 
 def test_generate_periods_initial_stub_interpolation():
@@ -29,8 +30,13 @@ def test_generate_periods_initial_stub_interpolation():
     calendar = BusinessCalendar(config_dir="config")
     resolver = ReferenceResolver(doc)
     scheduler = CalculationPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
 
-    periods = scheduler.generate_periods(floating_stream)
+    periods = scheduler.generate_periods(
+        floating_stream, step_schedule_resolver_factory
+    )
 
     # ird-ex02 has 10 calculation periods
     assert len(periods) == 10
@@ -81,8 +87,13 @@ def test_generate_periods_initial_stub_rate():
     calendar = BusinessCalendar(config_dir="config")
     resolver = ReferenceResolver(doc)
     scheduler = CalculationPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
 
-    periods = scheduler.generate_periods(floating_stream)
+    periods = scheduler.generate_periods(
+        floating_stream, step_schedule_resolver_factory
+    )
 
     p1 = periods[0]
     assert p1.adjusted_start_date.to_date() == date(1995, 1, 16)
@@ -120,12 +131,17 @@ def test_generate_periods_initial_stub_amount():
 
     calendar = BusinessCalendar(config_dir="config")
     resolver = ReferenceResolver(doc)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
 
-    from src.schedulers.swap_stream_scheduler import SwapStreamScheduler
+    from src.schedulers.payment_period_scheduler import PaymentPeriodScheduler
 
-    scheduler = SwapStreamScheduler(calendar, resolver)
+    scheduler = PaymentPeriodScheduler(calendar, resolver)
 
-    periods = scheduler.generate_payment_periods(floating_stream)
+    periods = scheduler.generate_payment_periods(
+        floating_stream, step_schedule_resolver_factory
+    )
 
     p1 = periods[0]
     assert p1.adjusted_payment_date.to_date() == date(1995, 6, 14)
@@ -172,8 +188,13 @@ def test_generate_periods_final_stub():
     calendar = BusinessCalendar(config_dir="config")
     resolver = ReferenceResolver(doc)
     scheduler = CalculationPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
 
-    periods = scheduler.generate_periods(floating_stream)
+    periods = scheduler.generate_periods(
+        floating_stream, step_schedule_resolver_factory
+    )
 
     # 頻度 6M で 1995-01-16 から 1999-07-14 まで 9 期間 + 最終スタブ 1 期間 = 計 10 期間
     assert len(periods) == 10
@@ -217,8 +238,13 @@ def test_generate_periods_notional_amortization():
     calendar = BusinessCalendar(config_dir="config")
     resolver = ReferenceResolver(doc)
     scheduler = CalculationPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
 
-    periods = scheduler.generate_periods(floating_stream)
+    periods = scheduler.generate_periods(
+        floating_stream, step_schedule_resolver_factory
+    )
 
     assert len(periods) == 10
 
@@ -271,8 +297,13 @@ def test_generate_periods_reset_in_arrears():
     calendar = BusinessCalendar(config_dir="config")
     resolver = ReferenceResolver(doc)
     scheduler = CalculationPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
 
-    periods = scheduler.generate_periods(floating_stream)
+    periods = scheduler.generate_periods(
+        floating_stream, step_schedule_resolver_factory
+    )
 
     assert len(periods) == 10
 
@@ -314,8 +345,13 @@ def test_generate_periods_reset_relative_to_none():
     calendar = BusinessCalendar(config_dir="config")
     resolver = ReferenceResolver(doc)
     scheduler = CalculationPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
 
-    periods = scheduler.generate_periods(floating_stream)
+    periods = scheduler.generate_periods(
+        floating_stream, step_schedule_resolver_factory
+    )
 
     assert len(periods) == 10
     p1 = periods[0]
@@ -361,8 +397,9 @@ def test_generate_periods_fixed_rate_step_schedule():
     calendar = BusinessCalendar(config_dir="config")
     resolver = ReferenceResolver(doc)
     scheduler = CalculationPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(fixed_stream, resolver)
 
-    periods = scheduler.generate_periods(fixed_stream)
+    periods = scheduler.generate_periods(fixed_stream, step_schedule_resolver_factory)
 
     assert len(periods) == 5
 
@@ -425,8 +462,13 @@ def test_generate_periods_floating_spread_step_schedule():
     calendar = BusinessCalendar(config_dir="config")
     resolver = ReferenceResolver(doc)
     scheduler = CalculationPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
 
-    periods = scheduler.generate_periods(floating_stream)
+    periods = scheduler.generate_periods(
+        floating_stream, step_schedule_resolver_factory
+    )
 
     assert len(periods) == 10
 
@@ -472,10 +514,14 @@ def test_compounding_schedule_with_first_compounding_period_end_date():
 
     calendar = BusinessCalendar(config_dir="config")
     resolver = ReferenceResolver(doc)
-
-    # 1. CalculationPeriodScheduler の期日生成テスト
     scheduler = CalculationPeriodScheduler(calendar, resolver)
-    periods = scheduler.generate_periods(floating_stream)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
+
+    periods = scheduler.generate_periods(
+        floating_stream, step_schedule_resolver_factory
+    )
 
     # 期待される計算期間の数: 9期
     assert len(periods) == 9
@@ -489,8 +535,13 @@ def test_compounding_schedule_with_first_compounding_period_end_date():
     assert periods[1].unadjusted_end_date.to_date() == date(2000, 9, 27)
 
     # 2. SwapStreamScheduler (PaymentPeriodScheduler) の集約テスト
-    stream_scheduler = SwapStreamScheduler(calendar, resolver)
-    payment_periods = stream_scheduler.generate_payment_periods(floating_stream)
+    stream_scheduler = PaymentPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory_pay = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
+    payment_periods = stream_scheduler.generate_payment_periods(
+        floating_stream, step_schedule_resolver_factory_pay
+    )
 
     # 期待される支払期間の数: 5期
     assert len(payment_periods) == 5
