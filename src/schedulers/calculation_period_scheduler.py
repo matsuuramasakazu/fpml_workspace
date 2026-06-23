@@ -71,17 +71,20 @@ class CalculationPeriodScheduler:
         """開始日と終了日の調整日を算出します。"""
         calc_dates = stream.calculation_period_dates
         effective_date_val = calc_dates.effective_date.unadjusted_date.value.to_date()
-        termination_date_val = (
-            calc_dates.termination_date.unadjusted_date.value.to_date()
-        )
+        termination_date_val = calc_dates.termination_date.unadjusted_date.value.to_date()
 
-        effective_adjusted = self._adjuster.adjust_date(
-            effective_date_val, calc_dates.effective_date.date_adjustments
+        if calc_dates.first_period_start_date is not None:
+            actual_start = calc_dates.first_period_start_date.unadjusted_date.value.to_date()
+        else:
+            actual_start = effective_date_val
+
+        actual_start_adjusted = self._adjuster.adjust_date(
+            actual_start, calc_dates.effective_date.date_adjustments
         )
         termination_adjusted = self._adjuster.adjust_date(
             termination_date_val, calc_dates.termination_date.date_adjustments
         )
-        return effective_adjusted, termination_adjusted
+        return actual_start_adjusted, termination_adjusted
 
     def _generate_unadjusted_schedule_dates(
         self, stream: InterestRateStream
@@ -129,9 +132,14 @@ class CalculationPeriodScheduler:
             )
 
         # 全体の日付リストを作成
-        unadjusted_dates = [effective_date_val]
+        if calc_dates.first_period_start_date is not None:
+            actual_start = calc_dates.first_period_start_date.unadjusted_date.to_date()
+        else:
+            actual_start = effective_date_val
+
+        unadjusted_dates = [actual_start]
         for d in reg_dates:
-            if d != effective_date_val and d != termination_date_val:
+            if d != actual_start and d != termination_date_val:
                 unadjusted_dates.append(d)
         unadjusted_dates.append(termination_date_val)
         return sorted(list(set(unadjusted_dates)))

@@ -5,6 +5,7 @@ You must always answer in Japanese.
 
 ## Grounding Protocol (Workspace Context)
 Your answers must always be grounded in the resources within this workspace.
+Don't make definitive statements based on speculation.
 - **XSD Schemas**: Located in the `confirmation/` directory. Please refer to `fpml_xsd_catalog.md` to understand the mapping between each product (IRD, FX, Credit, etc.) and its corresponding schema.
 - **Sample XMLs**: Located in `confirmation/products/` and `confirmation/business-processes/`. Use these to understand the patterns of actual FpML messages.
 - **Python Models**: Located in the `fpml/` directory. These classes reflect the FpML data structure and can be used as a reference to verify the hierarchical structure of elements.

@@ -5,21 +5,21 @@ from src.schedulers.period_date_generator import PeriodDateGenerator
 
 def test_add_months():
     # 通常の加算
-    assert PeriodDateGenerator.add_months(date(2024, 1, 15), 1, "15") == date(
+    assert PeriodDateGenerator._add_months(date(2024, 1, 15), 1, "15") == date(
         2024, 2, 15
     )
     # 2月月末調整
-    assert PeriodDateGenerator.add_months(date(2024, 1, 31), 1, "EOM") == date(
+    assert PeriodDateGenerator._add_months(date(2024, 1, 31), 1, "EOM") == date(
         2024, 2, 29
     )  # 2024年は閏年
-    assert PeriodDateGenerator.add_months(date(2023, 1, 31), 1, "EOM") == date(
+    assert PeriodDateGenerator._add_months(date(2023, 1, 31), 1, "EOM") == date(
         2023, 2, 28
     )
     # ロールコンベンションによる調整
-    assert PeriodDateGenerator.add_months(date(2024, 1, 31), 1, "30") == date(
+    assert PeriodDateGenerator._add_months(date(2024, 1, 31), 1, "30") == date(
         2024, 2, 29
     )  # 30指定だが2月は29日まで
-    assert PeriodDateGenerator.add_months(date(2024, 1, 15), 1, "31") == date(
+    assert PeriodDateGenerator._add_months(date(2024, 1, 15), 1, "31") == date(
         2024, 2, 29
     )  # 31（EOMと同様）を指定
 

@@ -23,6 +23,8 @@ FpML（Financial Products Markup Language）形式のスワップ契約データ
 | **支払期間** | 計算された金利を支払う期間。計算期間と同じまたはそれ以上の長さ | Payment Period |
 | **営業日調整** | 計算期間や支払日が営業日でない場合に調整するルール（FOLLOWING, MODFOLLOWING など） | Business Day Adjustment |
 | **ロール慣行** | 月単位で期間をロールする際の基準日（例：11日） | Roll Convention |
+| **支払サイクル日** | 支払頻度に基づき生成され、計算期間を支払期間にグループ化する境界となる。| Payment Cycle Date |
+| **調整済支払日** | 営業日調整および`paymentDaysOffset`適用後の実際の支払日。FpMLの`adjustedPaymentDate`要素に対応 | Adjusted Payment Date |
 
 ### キャッシュフロー
 

@@ -1,6 +1,39 @@
+# FpML workspace index
+
+**Agents: Start with Section 1 only. Detailed sections are available for reference**
+
 The schema files are labelled fpml-XXX-MajorVersion-MinorVersion.xsd (e.g. fpml-main-5-12.xsd), for better readability the version number is omitted from the schema names below.
 
-Confirmation Schemas:
+## 1. Repository Structure
+
+- `confirmation/` : FpML Confirmation View XSD Schemas, example XMLs, test cases
+    - `products`: Examples by asset class(fx-derivatives, interest-rate-derivatives, etc.)
+    - `business-processes`: Examples of business processes(trade-confirmation, trade-execution, trade-settlement, etc.)
+- `fpml/` : Python Data Classes generated from FpML Confirmation View XSD Schemas by xsdata
+
+
+## 2. Getting Started by Asset Class
+
+### Common Fundation (all products)
+
+- Root: `confirmation/fpml-main-5-12.xsd`
+- Shared types: `confirmation/fpml-shared-5-12.xsd`
+- Enumeration types: `confirmation/fpml-enum-5-12.xsd`
+
+### Your Product
+
+| Product Class | Start Here |
+| ------------- | ---------- |
+| **FX** | `confirmation/fpml-fx-5-12.xsd` |
+| **Interest Rate** | `confirmation/fpml-ird-5-12.xsd` |
+| **Equity** | `confirmation/fpml-eqd-5-12.xsd` |
+| **Credit** | `confirmation/fpml-cd-5-12.xsd` |
+| **Commodity** | `confirmation/fpml-com-5-12.xsd` |
+| **Inflation** | `confirmation/fpml-inf-5-12.xsd` |
+| **Other (Bond, Repo, Loan, etc.)** | See Section 3 |
+
+
+## 3. XSD Catalog
 
 confirmation/
 * example-extension.xsd - File containing an example of an extension from the 5.x confirmation view schemas.
