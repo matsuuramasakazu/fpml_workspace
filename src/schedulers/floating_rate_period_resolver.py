@@ -30,11 +30,11 @@ class FloatingRatePeriodResolver:
 
     def resolve_rate_def(
         self,
+        ustart: date,
         astart: date,
         aend: date,
         stream: InterestRateStream,
         step_schedule_resolver_factory: StepScheduleResolverFactory,
-        ustart: date,
     ) -> FloatingRateDefinition | None:
         """指定された調整前・調整済期間に基づき浮動金利定義を解決します。"""
         calc_params = stream.calculation_period_amount.calculation

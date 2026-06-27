@@ -38,6 +38,7 @@ class CalculationPeriodScheduler:
         self._calendar = calendar
         self._ref_resolver = ref_resolver
         self._adjuster = DateAdjuster(calendar, ref_resolver)
+        self._fixed_resolver = FixedRatePeriodResolver()
         self._floating_resolver = FloatingRatePeriodResolver(calendar, ref_resolver)
 
     def generate_periods(
@@ -205,9 +206,7 @@ class CalculationPeriodScheduler:
         fx_linked_notional_schedule = calc_params.fx_linked_notional_schedule
 
         # 各金利・スタブ解決用リゾルバーの生成
-        fixed_resolver = FixedRatePeriodResolver(
-            step_schedule_resolver_factory.fixed_rate_resolver
-        )
+        fixed_resolver = self._fixed_resolver
         floating_resolver = self._floating_resolver
         stub_resolver = StubPeriodResolver()
 
@@ -233,9 +232,11 @@ class CalculationPeriodScheduler:
 
             # 各金利タイプの解決
             # 通常金利の解決
-            fixed_rate = fixed_resolver.resolve_rate(ustart)
+            fixed_rate = fixed_resolver.resolve_rate(
+                ustart, step_schedule_resolver_factory
+            )
             floating_rate_def = floating_resolver.resolve_rate_def(
-                astart, aend, stream, step_schedule_resolver_factory, ustart
+                ustart, astart, aend, stream, step_schedule_resolver_factory
             )
             stub_amount = None
 

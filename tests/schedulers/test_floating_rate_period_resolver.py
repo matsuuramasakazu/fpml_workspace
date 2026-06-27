@@ -45,6 +45,7 @@ def test_floating_rate_period_resolver_rfr_lookback():
     scheduler = FloatingRatePeriodResolver(calendar, resolver)
 
     # 年末年始の祝日を挟むテスト期間 (2024-12-16 から 2025-01-16)
+    unadjusted_start = date(2024, 12, 16)
     adjusted_start = date(2024, 12, 16)
     adjusted_end = date(2025, 1, 16)
 
@@ -62,11 +63,11 @@ def test_floating_rate_period_resolver_rfr_lookback():
         floating_stream, resolver
     )
     floating_def = scheduler.resolve_rate_def(
+        unadjusted_start,
         adjusted_start,
         adjusted_end,
         floating_stream,
         step_schedule_resolver_factory,
-        adjusted_start,
     )
     assert floating_def is not None
 
@@ -97,6 +98,7 @@ def test_floating_rate_period_resolver_rfr_observation_shift():
     resolver = ReferenceResolver(doc)
     scheduler = FloatingRatePeriodResolver(calendar, resolver)
 
+    unadjusted_start = date(2024, 12, 16)
     adjusted_start = date(2024, 12, 16)
     adjusted_end = date(2025, 1, 16)
 
@@ -115,11 +117,11 @@ def test_floating_rate_period_resolver_rfr_observation_shift():
         floating_stream, resolver
     )
     floating_def = scheduler.resolve_rate_def(
+        unadjusted_start,
         adjusted_start,
         adjusted_end,
         floating_stream,
         step_schedule_resolver_factory,
-        adjusted_start,
     )
     assert floating_def is not None
     assert len(floating_def.rate_observation) == 20
@@ -148,6 +150,7 @@ def test_floating_rate_period_resolver_rfr_lockout():
     resolver = ReferenceResolver(doc)
     scheduler = FloatingRatePeriodResolver(calendar, resolver)
 
+    unadjusted_start = date(2024, 12, 16)
     adjusted_start = date(2024, 12, 16)
     adjusted_end = date(2025, 1, 16)
 
@@ -165,11 +168,11 @@ def test_floating_rate_period_resolver_rfr_lockout():
         floating_stream, resolver
     )
     floating_def = scheduler.resolve_rate_def(
+        unadjusted_start,
         adjusted_start,
         adjusted_end,
         floating_stream,
         step_schedule_resolver_factory,
-        adjusted_start,
     )
     assert floating_def is not None
     assert len(floating_def.rate_observation) == 20
@@ -194,9 +197,10 @@ def test_floating_rate_period_resolver_rfr_plain():
     )
     calendar = BusinessCalendar(config_dir="config")
     floating_stream, doc = setup_stream_with_parameters(xml_path)
-    resolver = ReferenceResolver(doc)
-    scheduler = FloatingRatePeriodResolver(calendar, resolver)
+    ref_resolver = ReferenceResolver(doc)
+    scheduler = FloatingRatePeriodResolver(calendar, ref_resolver)
 
+    unadjusted_start = date(2024, 12, 16)
     adjusted_start = date(2024, 12, 16)
     adjusted_end = date(2025, 1, 16)
 
@@ -209,14 +213,14 @@ def test_floating_rate_period_resolver_rfr_plain():
     calc_params.floating_rate_calculation.calculation_parameters.lockout = None
 
     step_schedule_resolver_factory = StepScheduleResolverFactory(
-        floating_stream, resolver
+        floating_stream, ref_resolver
     )
     floating_def = scheduler.resolve_rate_def(
+        unadjusted_start,
         adjusted_start,
         adjusted_end,
         floating_stream,
         step_schedule_resolver_factory,
-        adjusted_start,
     )
     assert floating_def is not None
     assert len(floating_def.rate_observation) == 20
