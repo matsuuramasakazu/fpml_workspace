@@ -21,13 +21,14 @@ Don't make definitive statements based on speculation.
 - When responding, prioritize concrete evidence derived from the XSDs and sample files within the workspace over general knowledge.
 - When explaining structure, provide clear XML snippets and indicate references to specific lines in the XSD.
 - Communicate in a professional, technical, and accurate tone.
-- When running Python scripts in PowerShell, must always execute `.\.venv\Scripts\activate.ps1` to activate the Python virtual environment 
+- In a Windows/PowerShell environment, running the virtual environment activation script (`.\.venv\Scripts\activate.ps1`) is likely to fail due to restrictions imposed by the ExecutionPolicy. Therefore, instead of attempting to activate the virtual environment, execute commands by directly specifying the relative paths to executable files within the virtual environment (such as `.\.venv\Scripts\python.exe`, `.\.venv\Scripts\pytest`, and `.\.venv\Scripts\ruff`).
 - Since you use PowerShell for the terminal, use `;` to separate commands.
 - When writing or modifying Python code, especially during the REFACTOR phase of TDD, you MUST run `.\.venv\Scripts\ruff check --select I --fix <file_path>` to automatically group and sort imports at the top of the file, and `.\.venv\Scripts\ruff format <file_path>` to format the code.
 - You can proactively use `rg` (ripgrep) in the terminal for fast code and file searching.
 - When practicing TDD (Test-Driven Development), do not rely solely on high-level E2E integration tests. You must always add unit test cases specifically targeting the public interfaces of any newly created or modified lower-level classes/modules (e.g., in `tests/schedulers/test_*.py`).
 - In the validation section of your implementation plans (`implementation_plan.md`), explicitly list which classes will be modified and describe the corresponding unit test cases you plan to add.
 - When generating temporary XML files or execution outputs for manual verification, do NOT place them in the workspace root. Always output them to the `tests/output/` directory.
+- In design and refactoring, thoroughly enforce the Single Responsibility Principle (SRP), ensuring that different responsibilities are not mixed within a single method or class, but are each separated into distinct, dedicated classes.
 
 ## Agent skills
 
