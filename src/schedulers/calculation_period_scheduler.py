@@ -7,9 +7,12 @@ from xsdata.models.datatype import XmlDate
 
 from fpml.confirmation import (
     CalculationPeriod,
+    CalculationPeriodDates,
     FxLinkedNotionalAmount,
     InterestRateStream,
-    Schedule,
+    RelativeDateOffset,
+    ResetDates,
+    ResetRelativeToEnum,
 )
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.date_adjuster import DateAdjuster
@@ -49,42 +52,23 @@ class CalculationPeriodScheduler:
         Returns:
             生成された CalculationPeriod のリスト
         """
-        # 1. 開始日と終了日の休日調整
-        adjusted_start, adjusted_end = self._resolve_adjusted_boundaries(stream)
-
-        # 2. unadjusted dates 系列の生成
+        # 1. unadjusted dates 系列の生成
         unadjusted_dates = self._generate_unadjusted_schedule_dates(stream)
 
+        # 2. 開始日と終了日の休日調整
+        adjusted_start, adjusted_end = self._adjust_boundary_dates(stream)
+
         # 3. 中間期日の休日調整
-        adjusted_dates = self._adjust_intermediate_dates(
-            unadjusted_dates, adjusted_start, adjusted_end, stream
+        adjusted_intermediate_dates = self._adjust_intermediate_dates(
+            unadjusted_dates, stream
         )
+
+        adjusted_dates = [adjusted_start, *adjusted_intermediate_dates, adjusted_end]
 
         # 4. 各計算期間の構築
         return self._build_calculation_periods(
             unadjusted_dates, adjusted_dates, stream, step_schedule_resolver_factory
         )
-
-    def _resolve_adjusted_boundaries(
-        self, stream: InterestRateStream
-    ) -> Tuple[date, date]:
-        """開始日と終了日の調整日を算出します。"""
-        calc_dates = stream.calculation_period_dates
-        effective_date_val = calc_dates.effective_date.unadjusted_date.value.to_date()
-        termination_date_val = calc_dates.termination_date.unadjusted_date.value.to_date()
-
-        if calc_dates.first_period_start_date is not None:
-            actual_start = calc_dates.first_period_start_date.unadjusted_date.value.to_date()
-        else:
-            actual_start = effective_date_val
-
-        actual_start_adjusted = self._adjuster.adjust_date(
-            actual_start, calc_dates.effective_date.date_adjustments
-        )
-        termination_adjusted = self._adjuster.adjust_date(
-            termination_date_val, calc_dates.termination_date.date_adjustments
-        )
-        return actual_start_adjusted, termination_adjusted
 
     def _generate_unadjusted_schedule_dates(
         self, stream: InterestRateStream
@@ -99,33 +83,41 @@ class CalculationPeriodScheduler:
         freq = calc_dates.calculation_period_frequency
         roll_conv = freq.roll_convention.value
 
-        first_regular = None
+        first_reg_calc_date_val = None
         if calc_dates.first_regular_period_start_date is not None:
-            first_regular = calc_dates.first_regular_period_start_date.to_date()
+            first_reg_calc_date_val = calc_dates.first_regular_period_start_date.to_date()
         elif calc_dates.first_compounding_period_end_date is not None:
-            first_regular = calc_dates.first_compounding_period_end_date.to_date()
+            first_reg_calc_date_val = calc_dates.first_compounding_period_end_date.to_date()
 
-        last_regular = None
+        last_reg_calc_date_val = None
         if calc_dates.last_regular_period_end_date is not None:
-            last_regular = calc_dates.last_regular_period_end_date.to_date()
+            last_reg_calc_date_val = calc_dates.last_regular_period_end_date.to_date()
 
         # レギュラー期間の基準日
-        reg_start = first_regular if first_regular is not None else effective_date_val
-        reg_end = last_regular if last_regular is not None else termination_date_val
+        reg_start_date_val = (
+            first_reg_calc_date_val
+            if first_reg_calc_date_val is not None
+            else effective_date_val
+        )
+        reg_end_date_val = (
+            last_reg_calc_date_val
+            if last_reg_calc_date_val is not None
+            else termination_date_val
+        )
 
         # レギュラー期間の日付生成 (PeriodDateGenerator に委譲)
-        if last_regular is not None:
-            reg_dates = PeriodDateGenerator.generate_unadjusted_dates_backward(
-                reg_start,
-                reg_end,
+        if last_reg_calc_date_val is not None:
+            reg_calc_dates = PeriodDateGenerator.generate_unadjusted_dates_backward(
+                reg_start_date_val,
+                reg_end_date_val,
                 freq.period_multiplier,
                 freq.period.value,
                 roll_conv,
             )
         else:
-            reg_dates = PeriodDateGenerator.generate_unadjusted_dates(
-                reg_start,
-                reg_end,
+            reg_calc_dates = PeriodDateGenerator.generate_unadjusted_dates(
+                reg_start_date_val,
+                reg_end_date_val,
                 freq.period_multiplier,
                 freq.period.value,
                 roll_conv,
@@ -133,32 +125,63 @@ class CalculationPeriodScheduler:
 
         # 全体の日付リストを作成
         if calc_dates.first_period_start_date is not None:
-            actual_start = calc_dates.first_period_start_date.unadjusted_date.to_date()
+            start_calc_date_val = (
+                calc_dates.first_period_start_date.unadjusted_date.to_date()
+            )
+        else:
+            start_calc_date_val = effective_date_val
+
+        unadjusted_calc_dates = [start_calc_date_val]
+
+        for reg_calc_date in reg_calc_dates:
+            if (
+                reg_calc_date != start_calc_date_val
+                and reg_calc_date != termination_date_val
+            ):
+                unadjusted_calc_dates.append(reg_calc_date)
+
+        unadjusted_calc_dates.append(termination_date_val)
+
+        return sorted(list(set(unadjusted_calc_dates)))
+
+    def _adjust_boundary_dates(self, stream: InterestRateStream) -> Tuple[date, date]:
+        """開始日と終了日の調整日を算出します。"""
+        calc_dates = stream.calculation_period_dates
+        effective_date_val = calc_dates.effective_date.unadjusted_date.value.to_date()
+        termination_date_val = (
+            calc_dates.termination_date.unadjusted_date.value.to_date()
+        )
+
+        if calc_dates.first_period_start_date is not None:
+            actual_start = (
+                calc_dates.first_period_start_date.unadjusted_date.value.to_date()
+            )
+            start_adjustments = calc_dates.first_period_start_date.date_adjustments
         else:
             actual_start = effective_date_val
+            start_adjustments = calc_dates.effective_date.date_adjustments
 
-        unadjusted_dates = [actual_start]
-        for d in reg_dates:
-            if d != actual_start and d != termination_date_val:
-                unadjusted_dates.append(d)
-        unadjusted_dates.append(termination_date_val)
-        return sorted(list(set(unadjusted_dates)))
+        actual_start_adjusted = self._adjuster.adjust_date(
+            actual_start, start_adjustments
+        )
+        termination_adjusted = self._adjuster.adjust_date(
+            termination_date_val, calc_dates.termination_date.date_adjustments
+        )
+        return actual_start_adjusted, termination_adjusted
 
     def _adjust_intermediate_dates(
         self,
         unadjusted_dates: List[date],
-        adjusted_start: date,
-        adjusted_end: date,
         stream: InterestRateStream,
     ) -> List[date]:
         """中間期日の休日調整を行います。"""
         calc_dates = stream.calculation_period_dates
         calc_adjustments = calc_dates.calculation_period_dates_adjustments
 
-        adjusted_dates = [adjusted_start]
-        for d in unadjusted_dates[1:-1]:
-            adjusted_dates.append(self._adjuster.adjust_date(d, calc_adjustments))
-        adjusted_dates.append(adjusted_end)
+        adjusted_dates = [
+            self._adjuster.adjust_date(d, calc_adjustments)
+            for d in unadjusted_dates[1:-1]
+        ]
         return adjusted_dates
 
     def _build_calculation_periods(
@@ -190,14 +213,14 @@ class CalculationPeriodScheduler:
             # 想定元本の解決 (ループ外で生成されたリゾルバーを利用)
             notional = step_schedule_resolver_factory.notional_resolver.resolve(ustart)
 
-            # 固定金利、浮動金利、スタブの解決
-            fixed_rate, floating_rate_def, stub_amount = self._resolve_rates_for_period(
-                ustart, uend, astart, aend, stream, step_schedule_resolver_factory
-            )
-
             # FxLinkedNotionalAmountの構築
             fx_linked_notional_amount = self._build_fx_linked_notional(
                 astart, aend, fx_linked_notional_schedule, stream
+            )
+
+            # 固定金利、浮動金利、スタブの解決
+            fixed_rate, floating_rate_def, stub_amount = self._resolve_rates_for_period(
+                ustart, uend, astart, aend, stream, step_schedule_resolver_factory
             )
 
             calc_period = CalculationPeriod(
@@ -229,37 +252,39 @@ class CalculationPeriodScheduler:
     ) -> Tuple[Decimal | None, Any | None, Any | None]:
         """各期間に応じた適用金利（固定／浮動／スタブ設定）を解決します。"""
         calc_dates = stream.calculation_period_dates
-        first_regular = None
+
+        first_reg_calc_date_val = None
         if calc_dates.first_regular_period_start_date is not None:
-            first_regular = calc_dates.first_regular_period_start_date.to_date()
+            first_reg_calc_date_val = calc_dates.first_regular_period_start_date.to_date()
         elif calc_dates.first_compounding_period_end_date is not None:
-            first_regular = calc_dates.first_compounding_period_end_date.to_date()
+            first_reg_calc_date_val = calc_dates.first_compounding_period_end_date.to_date()
 
-        last_regular = None
+        last_reg_calc_date_val = None
         if calc_dates.last_regular_period_end_date is not None:
-            last_regular = calc_dates.last_regular_period_end_date.to_date()
+            last_reg_calc_date_val = calc_dates.last_regular_period_end_date.to_date()
 
-        is_initial_stub = first_regular is not None and ustart < first_regular
-        is_final_stub = last_regular is not None and uend > last_regular
+        is_initial_stub = first_reg_calc_date_val is not None and ustart < first_reg_calc_date_val
+        is_final_stub = last_reg_calc_date_val is not None and uend > last_reg_calc_date_val
 
-        # デフォルトの金利設定 (ループ外で生成されたリゾルバーを利用)
+        # デフォルトの金利設定
         fixed_rate = step_schedule_resolver_factory.fixed_rate_resolver.resolve(ustart)
         floating_rate_def = self._fixing_scheduler.calculate_fixing(
             astart, aend, stream, step_schedule_resolver_factory, ustart
         )
-        stub_amount = None
 
         # スタブ情報の適用
         stub_info = None
         if (
-            is_initial_stub or is_final_stub
-        ) and stream.stub_calculation_period_amount is not None:
+            (is_initial_stub or is_final_stub)
+            and stream.stub_calculation_period_amount is not None
+        ):
             stub_amount_info = stream.stub_calculation_period_amount
             if is_initial_stub and stub_amount_info.initial_stub is not None:
                 stub_info = stub_amount_info.initial_stub
             elif is_final_stub and stub_amount_info.final_stub is not None:
                 stub_info = stub_amount_info.final_stub
 
+        stub_amount = None
         if stub_info is not None:
             if stub_info.stub_rate is not None:
                 fixed_rate = stub_info.stub_rate
@@ -282,21 +307,37 @@ class CalculationPeriodScheduler:
         if fx_linked_notional_schedule is None:
             return None
 
-        reset_date_val = astart
-        if stream.reset_dates is not None:
-            reset_rel = stream.reset_dates.reset_relative_to
-            if reset_rel is not None and reset_rel.value == "CalculationPeriodEndDate":
+        fixing_dates: RelativeDateOffset = (
+            fx_linked_notional_schedule.varying_notional_fixing_dates
+        )
+        resolved_anchor = self._ref_resolver.resolve(fixing_dates.date_relative_to)
+        if isinstance(resolved_anchor, ResetDates):
+            if (
+                resolved_anchor.reset_relative_to
+                == ResetRelativeToEnum.CALCULATION_PERIOD_START_DATE
+            ):
+                reset_date_val = astart
+            elif (
+                resolved_anchor.reset_relative_to
+                == ResetRelativeToEnum.CALCULATION_PERIOD_END_DATE
+            ):
                 reset_date_val = aend
+            else:
+                raise ValueError(
+                    f"Unknown reset relative to: {resolved_anchor.reset_relative_to}"
+                )
+        elif isinstance(resolved_anchor, CalculationPeriodDates):
+            reset_date_val = astart
+        else:
+            raise ValueError(f"Unknown reset anchor: {resolved_anchor}")
 
-        fixing_dates = fx_linked_notional_schedule.varying_notional_fixing_dates
         adjusted_fx_spot_fixing = self._adjuster.resolve_relative_date_offset(
             reset_date_val, fixing_dates
         )
 
         return FxLinkedNotionalAmount(
-            reset_date=XmlDate(
-                reset_date_val.year, reset_date_val.month, reset_date_val.day
-            ),
+            # reset_dateは設定しないのが一般的（CalculationPeriodのadjustedStartDateと同じタイミング）
+            reset_date=XmlDate(astart.year, astart.month, astart.day),
             adjusted_fx_spot_fixing_date=XmlDate(
                 adjusted_fx_spot_fixing.year,
                 adjusted_fx_spot_fixing.month,

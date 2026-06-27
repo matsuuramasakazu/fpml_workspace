@@ -1,11 +1,22 @@
+import copy
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.models.datatype import XmlDate as ModelXmlDate
 
-from fpml.confirmation import DataDocument
+from fpml.confirmation import (
+    # CalculationPeriodDates,
+    DataDocument,
+    DateReference,
+    FxLinkedNotionalSchedule,
+    # RelativeDateOffset,
+    # ResetDates,
+    ResetRelativeToEnum,
+    Stub,
+)
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.calculation_period_scheduler import CalculationPeriodScheduler
 from src.schedulers.payment_period_scheduler import PaymentPeriodScheduler
@@ -78,8 +89,6 @@ def test_generate_periods_initial_stub_rate():
     floating_stream = doc.trade[0].swap.swap_stream[0]
 
     # stubCalculationPeriodAmount を上書きし、stub_rate = 0.035 (3.5%) を設定
-    from fpml.confirmation import Stub
-
     floating_stream.stub_calculation_period_amount.initial_stub = Stub(
         stub_rate=Decimal("0.035")
     )
@@ -565,3 +574,124 @@ def test_compounding_schedule_with_first_compounding_period_end_date():
     assert payment_periods[1].calculation_period[
         1
     ].unadjusted_end_date.to_date() == date(2000, 12, 27)
+
+
+def test_generate_periods_fx_linked_notional_floating_leg():
+    """varyingNotionalFixingDates が ResetDates を参照する変動金利元本リセットレッグのテスト"""
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex25-fxnotional-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    # 第2レッグ (変動金利 / 元本リセットサイド)
+    floating_stream = doc.trade[0].swap.swap_stream[1]
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+    scheduler = CalculationPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
+
+    periods = scheduler.generate_periods(
+        floating_stream, step_schedule_resolver_factory
+    )
+
+    assert len(periods) > 0
+
+    for period in periods:
+        fx_amount = period.fx_linked_notional_amount
+        assert fx_amount is not None
+        # reset_date は常に計算期間の調整済開始日と一致することを確認
+        assert fx_amount.reset_date.to_date() == period.adjusted_start_date.to_date()
+
+
+def test_generate_periods_fx_linked_notional_fixed_leg():
+    """varyingNotionalFixingDates が CalculationPeriodDates を参照する固定金利元本リセットレッグのテスト"""
+
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex25-fxnotional-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    # 第1レッグ (固定金利サイド) と 第2レッグ (変動金利サイド)
+    fixed_stream = doc.trade[0].swap.swap_stream[0]
+    floating_stream = doc.trade[0].swap.swap_stream[1]
+
+    # floating_stream から必須となる項目を借用する
+    floating_fx_schedule = floating_stream.calculation_period_amount.calculation.fx_linked_notional_schedule
+
+    # varyingNotionalFixingDates をディープコピーし、基準日を calculationPeriodDates (fixedCalcPeriodDates) に変更
+    varying_fixing = copy.deepcopy(floating_fx_schedule.varying_notional_fixing_dates)
+    varying_fixing.date_relative_to = DateReference(href="fixedCalcPeriodDates")
+
+    fixed_stream.calculation_period_amount.calculation.fx_linked_notional_schedule = FxLinkedNotionalSchedule(
+        constant_notional_schedule_reference=fixed_stream.calculation_period_amount.calculation.notional_schedule,
+        varying_notional_currency="USD",
+        varying_notional_fixing_dates=varying_fixing,
+        fx_spot_rate_source=floating_fx_schedule.fx_spot_rate_source,
+        varying_notional_interim_exchange_payment_dates=floating_fx_schedule.varying_notional_interim_exchange_payment_dates,
+    )
+    # 元本スケジュールを choice 構成に合わせて削除
+    fixed_stream.calculation_period_amount.calculation.notional_schedule = None
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+    scheduler = CalculationPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(fixed_stream, resolver)
+
+    # resetDates が存在しない状態での期間生成
+    periods = scheduler.generate_periods(fixed_stream, step_schedule_resolver_factory)
+
+    assert len(periods) > 0
+    for period in periods:
+        fx_amount = period.fx_linked_notional_amount
+        assert fx_amount is not None
+        # resetDates がなくても、reset_date は計算期間の調整済開始日と一致することを確認
+        assert fx_amount.reset_date.to_date() == period.adjusted_start_date.to_date()
+
+
+def test_generate_periods_fx_linked_notional_invalid_anchor():
+    """varyingNotionalFixingDates.dateRelativeTo が未対応の要素を参照している場合の例外テスト"""
+
+    xml_path = (
+        Path(__file__).parent.parent.parent
+        / "confirmation"
+        / "products"
+        / "interest-rate-derivatives"
+        / "ird-ex25-fxnotional-swap.xml"
+    )
+    parser = XmlParser()
+    doc = parser.from_path(xml_path, DataDocument)
+
+    # 第2レッグ
+    floating_stream = doc.trade[0].swap.swap_stream[1]
+
+    # アンカーを PaymentDates に差し替える
+    # (PaymentDates は ResetDates や CalculationPeriodDates ではないため、解決された段階で ValueError になるはず)
+    floating_stream.payment_dates.id = "dummyPaymentDates"
+    varying_fixing = floating_stream.calculation_period_amount.calculation.fx_linked_notional_schedule.varying_notional_fixing_dates
+    varying_fixing.date_relative_to = DateReference(href="dummyPaymentDates")
+
+    calendar = BusinessCalendar(config_dir="config")
+    resolver = ReferenceResolver(doc)
+    # ダミーで PaymentDates を解決できるようにリゾルバーの内部マップに登録
+    resolver._id_map["dummyPaymentDates"] = floating_stream.payment_dates
+
+    scheduler = CalculationPeriodScheduler(calendar, resolver)
+    step_schedule_resolver_factory = StepScheduleResolverFactory(
+        floating_stream, resolver
+    )
+
+    with pytest.raises(ValueError, match="Unknown reset anchor"):
+        scheduler.generate_periods(floating_stream, step_schedule_resolver_factory)
