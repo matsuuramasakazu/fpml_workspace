@@ -17,11 +17,13 @@ from fpml.confirmation import (
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.date_adjuster import DateAdjuster
 from src.schedulers.day_count_calculator import DayCountCalculator
-from src.schedulers.fixing_scheduler import FixingScheduler
+from src.schedulers.fixed_rate_period_resolver import FixedRatePeriodResolver
+from src.schedulers.floating_rate_period_resolver import FloatingRatePeriodResolver
 from src.schedulers.period_date_generator import PeriodDateGenerator
 from src.schedulers.reference_resolver import ReferenceResolver
 from src.schedulers.step_schedule_resolver import StepScheduleResolver
 from src.schedulers.step_schedule_resolver_factory import StepScheduleResolverFactory
+from src.schedulers.stub_period_resolver import StubPeriodResolver
 
 
 class CalculationPeriodScheduler:
@@ -36,7 +38,7 @@ class CalculationPeriodScheduler:
         self._calendar = calendar
         self._ref_resolver = ref_resolver
         self._adjuster = DateAdjuster(calendar, ref_resolver)
-        self._fixing_scheduler = FixingScheduler(calendar, ref_resolver)
+        self._floating_resolver = FloatingRatePeriodResolver(calendar, ref_resolver)
 
     def generate_periods(
         self,
@@ -85,9 +87,13 @@ class CalculationPeriodScheduler:
 
         first_reg_calc_date_val = None
         if calc_dates.first_regular_period_start_date is not None:
-            first_reg_calc_date_val = calc_dates.first_regular_period_start_date.to_date()
+            first_reg_calc_date_val = (
+                calc_dates.first_regular_period_start_date.to_date()
+            )
         elif calc_dates.first_compounding_period_end_date is not None:
-            first_reg_calc_date_val = calc_dates.first_compounding_period_end_date.to_date()
+            first_reg_calc_date_val = (
+                calc_dates.first_compounding_period_end_date.to_date()
+            )
 
         last_reg_calc_date_val = None
         if calc_dates.last_regular_period_end_date is not None:
@@ -198,6 +204,13 @@ class CalculationPeriodScheduler:
 
         fx_linked_notional_schedule = calc_params.fx_linked_notional_schedule
 
+        # 各金利・スタブ解決用リゾルバーの生成
+        fixed_resolver = FixedRatePeriodResolver(
+            step_schedule_resolver_factory.fixed_rate_resolver
+        )
+        floating_resolver = self._floating_resolver
+        stub_resolver = StubPeriodResolver()
+
         calc_periods = []
         for i in range(len(unadjusted_dates) - 1):
             ustart = unadjusted_dates[i]
@@ -218,10 +231,29 @@ class CalculationPeriodScheduler:
                 astart, aend, fx_linked_notional_schedule, stream
             )
 
-            # 固定金利、浮動金利、スタブの解決
-            fixed_rate, floating_rate_def, stub_amount = self._resolve_rates_for_period(
-                ustart, uend, astart, aend, stream, step_schedule_resolver_factory
+            # 各金利タイプの解決
+            # 通常金利の解決
+            fixed_rate = fixed_resolver.resolve_rate(ustart)
+            floating_rate_def = floating_resolver.resolve_rate_def(
+                astart, aend, stream, step_schedule_resolver_factory, ustart
             )
+            stub_amount = None
+
+            # スタブ判定および上書き適用
+            is_initial, is_final = stub_resolver.is_stub(
+                ustart, uend, stream.calculation_period_dates
+            )
+            if is_initial or is_final:
+                stub_rate, s_amount = stub_resolver.resolve_stub_overrides(
+                    is_initial, is_final, stream
+                )
+                if stub_rate is not None:
+                    fixed_rate = stub_rate
+                    floating_rate_def = None
+                elif s_amount is not None:
+                    fixed_rate = None
+                    floating_rate_def = None
+                    stub_amount = s_amount
 
             calc_period = CalculationPeriod(
                 unadjusted_start_date=XmlDate(ustart.year, ustart.month, ustart.day),
@@ -240,61 +272,6 @@ class CalculationPeriodScheduler:
             calc_periods.append(calc_period)
 
         return calc_periods
-
-    def _resolve_rates_for_period(
-        self,
-        ustart: date,
-        uend: date,
-        astart: date,
-        aend: date,
-        stream: InterestRateStream,
-        step_schedule_resolver_factory: StepScheduleResolverFactory,
-    ) -> Tuple[Decimal | None, Any | None, Any | None]:
-        """各期間に応じた適用金利（固定／浮動／スタブ設定）を解決します。"""
-        calc_dates = stream.calculation_period_dates
-
-        first_reg_calc_date_val = None
-        if calc_dates.first_regular_period_start_date is not None:
-            first_reg_calc_date_val = calc_dates.first_regular_period_start_date.to_date()
-        elif calc_dates.first_compounding_period_end_date is not None:
-            first_reg_calc_date_val = calc_dates.first_compounding_period_end_date.to_date()
-
-        last_reg_calc_date_val = None
-        if calc_dates.last_regular_period_end_date is not None:
-            last_reg_calc_date_val = calc_dates.last_regular_period_end_date.to_date()
-
-        is_initial_stub = first_reg_calc_date_val is not None and ustart < first_reg_calc_date_val
-        is_final_stub = last_reg_calc_date_val is not None and uend > last_reg_calc_date_val
-
-        # デフォルトの金利設定
-        fixed_rate = step_schedule_resolver_factory.fixed_rate_resolver.resolve(ustart)
-        floating_rate_def = self._fixing_scheduler.calculate_fixing(
-            astart, aend, stream, step_schedule_resolver_factory, ustart
-        )
-
-        # スタブ情報の適用
-        stub_info = None
-        if (
-            (is_initial_stub or is_final_stub)
-            and stream.stub_calculation_period_amount is not None
-        ):
-            stub_amount_info = stream.stub_calculation_period_amount
-            if is_initial_stub and stub_amount_info.initial_stub is not None:
-                stub_info = stub_amount_info.initial_stub
-            elif is_final_stub and stub_amount_info.final_stub is not None:
-                stub_info = stub_amount_info.final_stub
-
-        stub_amount = None
-        if stub_info is not None:
-            if stub_info.stub_rate is not None:
-                fixed_rate = stub_info.stub_rate
-                floating_rate_def = None
-            elif stub_info.stub_amount is not None:
-                fixed_rate = None
-                floating_rate_def = None
-                stub_amount = stub_info.stub_amount
-
-        return fixed_rate, floating_rate_def, stub_amount
 
     def _build_fx_linked_notional(
         self,

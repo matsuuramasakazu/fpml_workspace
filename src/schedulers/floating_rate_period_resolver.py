@@ -1,25 +1,20 @@
-from datetime import date, timedelta
-from decimal import Decimal
-
-from xsdata.models.datatype import XmlDate
+from datetime import date
 
 from fpml.confirmation import (
     CalculationParameters,
     FloatingRateDefinition,
     InterestRateStream,
-    RateObservation,
 )
 from src.calendars.business_calendar import BusinessCalendar
 from src.schedulers.date_adjuster import DateAdjuster
 from src.schedulers.ibor_observation_scheduler import IBORObservationScheduler
 from src.schedulers.reference_resolver import ReferenceResolver
 from src.schedulers.rfr_observation_scheduler import RFRObservationScheduler
-from src.schedulers.step_schedule_resolver import StepScheduleResolver
 from src.schedulers.step_schedule_resolver_factory import StepScheduleResolverFactory
 
 
-class FixingScheduler:
-    """浮動金利レグに対する Fixing（金利決定）スケジュールの決定を担当するクラス。"""
+class FloatingRatePeriodResolver:
+    """計算期間に対する浮動金利（Fixing）の解決を担当するクラス。"""
 
     def __init__(self, calendar: BusinessCalendar, ref_resolver: ReferenceResolver):
         """
@@ -33,26 +28,15 @@ class FixingScheduler:
         self._rfr_scheduler = RFRObservationScheduler(calendar, ref_resolver)
         self._ibor_scheduler = IBORObservationScheduler(self._adjuster)
 
-    def calculate_fixing(
+    def resolve_rate_def(
         self,
-        adjusted_start: date,
-        adjusted_end: date,
+        astart: date,
+        aend: date,
         stream: InterestRateStream,
         step_schedule_resolver_factory: StepScheduleResolverFactory,
-        unadjusted_start: date | None = None,
+        ustart: date,
     ) -> FloatingRateDefinition | None:
-        """計算期間の調整日を基準に、Fixing日を算出して FloatingRateDefinition を生成します。
-
-        Args:
-            adjusted_start: 計算期間の調整済開始日
-            adjusted_end: 計算期間の調整済終了日
-            stream: FpML の金利ストリーム情報
-            step_schedule_resolver_factory: 各種ステップスケジュールリゾルバーを保持するFactory
-            unadjusted_start: 計算期間の調整前開始日
-
-        Returns:
-            構築された FloatingRateDefinition、または浮動金利情報がない場合は None
-        """
+        """指定された調整前・調整済期間に基づき浮動金利定義を解決します。"""
         calc_params = stream.calculation_period_amount.calculation
         floating_rate_calc = calc_params.floating_rate_calculation
 
@@ -60,7 +44,7 @@ class FixingScheduler:
             return None
 
         # 基準日の決定 (unadjusted_startが指定されていればそれを使用、なければadjusted_startを使用)
-        ref_date = unadjusted_start if unadjusted_start is not None else adjusted_start
+        ref_date = ustart if ustart is not None else astart
 
         # spread と multiplier
         spread = step_schedule_resolver_factory.spread_resolver.resolve(ref_date)
@@ -72,7 +56,7 @@ class FixingScheduler:
         calculation_parameters = floating_rate_calc.calculation_parameters
         if calculation_parameters is not None:
             rate_observations = self._rfr_scheduler.generate_rate_observations(
-                adjusted_start, adjusted_end, stream, calculation_parameters
+                astart, aend, stream, calculation_parameters
             )
             return FloatingRateDefinition(
                 rate_observation=rate_observations,
@@ -85,7 +69,7 @@ class FixingScheduler:
             return None
 
         rate_observations = self._ibor_scheduler.generate_rate_observations(
-            adjusted_start, adjusted_end, stream
+            astart, aend, stream
         )
 
         return FloatingRateDefinition(

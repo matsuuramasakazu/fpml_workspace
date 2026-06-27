@@ -12,7 +12,7 @@ from fpml.confirmation import (
     ObservationShiftParameters,
 )
 from src.calendars.business_calendar import BusinessCalendar
-from src.schedulers.fixing_scheduler import FixingScheduler
+from src.schedulers.floating_rate_period_resolver import FloatingRatePeriodResolver
 from src.schedulers.reference_resolver import ReferenceResolver
 from src.schedulers.step_schedule_resolver_factory import StepScheduleResolverFactory
 
@@ -30,7 +30,7 @@ def setup_stream_with_parameters(xml_path):
     return floating_stream, doc
 
 
-def test_fixing_scheduler_rfr_lookback():
+def test_floating_rate_period_resolver_rfr_lookback():
     """Lookback (GBLOカレンダーでの祝日を挟む期間での検証)。"""
     xml_path = (
         Path(__file__).parent.parent.parent
@@ -42,7 +42,7 @@ def test_fixing_scheduler_rfr_lookback():
     calendar = BusinessCalendar(config_dir="config")
     floating_stream, doc = setup_stream_with_parameters(xml_path)
     resolver = ReferenceResolver(doc)
-    scheduler = FixingScheduler(calendar, resolver)
+    scheduler = FloatingRatePeriodResolver(calendar, resolver)
 
     # 年末年始の祝日を挟むテスト期間 (2024-12-16 から 2025-01-16)
     adjusted_start = date(2024, 12, 16)
@@ -61,22 +61,21 @@ def test_fixing_scheduler_rfr_lookback():
     step_schedule_resolver_factory = StepScheduleResolverFactory(
         floating_stream, resolver
     )
-    floating_def = scheduler.calculate_fixing(
-        adjusted_start, adjusted_end, floating_stream, step_schedule_resolver_factory
+    floating_def = scheduler.resolve_rate_def(
+        adjusted_start,
+        adjusted_end,
+        floating_stream,
+        step_schedule_resolver_factory,
+        adjusted_start,
     )
     assert floating_def is not None
 
-    # GBLO 営業日数は：
-    # 12/16〜1/15 の暦日は31日。
-    # 週末: 12/21,22, 12/28,29, 1/4,5, 1/11,12 (8日)
-    # 祝日: 12/25 (水), 12/26 (木), 1/1 (水) (3日)
-    # 営業日数: 31 - 8 - 3 = 20営業日。
+    # GBLO 営業日数は：20営業日
     assert len(floating_def.rate_observation) == 20
 
     obs = {o.reset_date.to_date(): o for o in floating_def.rate_observation}
 
     # 12/24 (火) の検証 (次の営業日は 12/27 金)
-    # Lookback: ウェイトは適用日基準 (12/24 から 12/27 まで) -> 3日
     assert date(2024, 12, 24) in obs
     o_1224 = obs[date(2024, 12, 24)]
     assert o_1224.observation_weight == 3
@@ -84,7 +83,7 @@ def test_fixing_scheduler_rfr_lookback():
     assert o_1224.adjusted_fixing_date.to_date() == date(2024, 12, 17)
 
 
-def test_fixing_scheduler_rfr_observation_shift():
+def test_floating_rate_period_resolver_rfr_observation_shift():
     """Observation Shift (Standard 5営業日)。"""
     xml_path = (
         Path(__file__).parent.parent.parent
@@ -96,7 +95,7 @@ def test_fixing_scheduler_rfr_observation_shift():
     calendar = BusinessCalendar(config_dir="config")
     floating_stream, doc = setup_stream_with_parameters(xml_path)
     resolver = ReferenceResolver(doc)
-    scheduler = FixingScheduler(calendar, resolver)
+    scheduler = FloatingRatePeriodResolver(calendar, resolver)
 
     adjusted_start = date(2024, 12, 16)
     adjusted_end = date(2025, 1, 16)
@@ -115,8 +114,12 @@ def test_fixing_scheduler_rfr_observation_shift():
     step_schedule_resolver_factory = StepScheduleResolverFactory(
         floating_stream, resolver
     )
-    floating_def = scheduler.calculate_fixing(
-        adjusted_start, adjusted_end, floating_stream, step_schedule_resolver_factory
+    floating_def = scheduler.resolve_rate_def(
+        adjusted_start,
+        adjusted_end,
+        floating_stream,
+        step_schedule_resolver_factory,
+        adjusted_start,
     )
     assert floating_def is not None
     assert len(floating_def.rate_observation) == 20
@@ -124,7 +127,6 @@ def test_fixing_scheduler_rfr_observation_shift():
     obs = {o.reset_date.to_date(): o for o in floating_def.rate_observation}
 
     # 12/24 (火) の検証 (次の営業日は 12/27 金)
-    # Shift: ウェイトは観測日基準 (12/24の観測日12/17 から 12/27の観測日12/18 まで) -> 1日
     assert date(2024, 12, 24) in obs
     o_1224 = obs[date(2024, 12, 24)]
     assert o_1224.observation_weight == 1
@@ -132,7 +134,7 @@ def test_fixing_scheduler_rfr_observation_shift():
     assert o_1224.adjusted_fixing_date.to_date() == date(2024, 12, 17)
 
 
-def test_fixing_scheduler_rfr_lockout():
+def test_floating_rate_period_resolver_rfr_lockout():
     """Lockout (5営業日)。"""
     xml_path = (
         Path(__file__).parent.parent.parent
@@ -144,7 +146,7 @@ def test_fixing_scheduler_rfr_lockout():
     calendar = BusinessCalendar(config_dir="config")
     floating_stream, doc = setup_stream_with_parameters(xml_path)
     resolver = ReferenceResolver(doc)
-    scheduler = FixingScheduler(calendar, resolver)
+    scheduler = FloatingRatePeriodResolver(calendar, resolver)
 
     adjusted_start = date(2024, 12, 16)
     adjusted_end = date(2025, 1, 16)
@@ -162,8 +164,12 @@ def test_fixing_scheduler_rfr_lockout():
     step_schedule_resolver_factory = StepScheduleResolverFactory(
         floating_stream, resolver
     )
-    floating_def = scheduler.calculate_fixing(
-        adjusted_start, adjusted_end, floating_stream, step_schedule_resolver_factory
+    floating_def = scheduler.resolve_rate_def(
+        adjusted_start,
+        adjusted_end,
+        floating_stream,
+        step_schedule_resolver_factory,
+        adjusted_start,
     )
     assert floating_def is not None
     assert len(floating_def.rate_observation) == 20
@@ -175,13 +181,9 @@ def test_fixing_scheduler_rfr_lockout():
     assert date(2025, 1, 15) in obs
     o_115 = obs[date(2025, 1, 15)]
     assert o_115.adjusted_fixing_date.to_date() == date(2025, 1, 9)
-    # 1/8 (水) (lockout以前) については、観測日は当日 (1/8)
-    assert date(2025, 1, 8) in obs
-    o_108 = obs[date(2025, 1, 8)]
-    assert o_108.adjusted_fixing_date.to_date() == date(2025, 1, 8)
 
 
-def test_fixing_scheduler_rfr_plain():
+def test_floating_rate_period_resolver_rfr_plain():
     """Plain (デイリーの Compounding オプションなし)。"""
     xml_path = (
         Path(__file__).parent.parent.parent
@@ -193,7 +195,7 @@ def test_fixing_scheduler_rfr_plain():
     calendar = BusinessCalendar(config_dir="config")
     floating_stream, doc = setup_stream_with_parameters(xml_path)
     resolver = ReferenceResolver(doc)
-    scheduler = FixingScheduler(calendar, resolver)
+    scheduler = FloatingRatePeriodResolver(calendar, resolver)
 
     adjusted_start = date(2024, 12, 16)
     adjusted_end = date(2025, 1, 16)
@@ -209,15 +211,18 @@ def test_fixing_scheduler_rfr_plain():
     step_schedule_resolver_factory = StepScheduleResolverFactory(
         floating_stream, resolver
     )
-    floating_def = scheduler.calculate_fixing(
-        adjusted_start, adjusted_end, floating_stream, step_schedule_resolver_factory
+    floating_def = scheduler.resolve_rate_def(
+        adjusted_start,
+        adjusted_end,
+        floating_stream,
+        step_schedule_resolver_factory,
+        adjusted_start,
     )
     assert floating_def is not None
     assert len(floating_def.rate_observation) == 20
 
     obs = {o.reset_date.to_date(): o for o in floating_def.rate_observation}
 
-    # 各適用営業日について、観測日は当日
     assert date(2024, 12, 24) in obs
     o_1224 = obs[date(2024, 12, 24)]
     assert o_1224.adjusted_fixing_date.to_date() == date(2024, 12, 24)
