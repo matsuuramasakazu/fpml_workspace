@@ -3,7 +3,8 @@ from typing import List
 
 from fpml.confirmation import DataDocument
 from src.validators.base import ValidationRule
-from src.validators.rules.ird_rules import (
+from src.validators.rules import (
+    ChoiceAndMultiplicityRule,
     Ird1Rule,
     Ird10Rule,
     Ird11Rule,
@@ -29,6 +30,7 @@ class FpmlValidator:
         """
         if rules is None:
             self._rules = [
+                ChoiceAndMultiplicityRule(),
                 Ird1Rule(),
                 Ird10Rule(),
                 Ird11Rule(),

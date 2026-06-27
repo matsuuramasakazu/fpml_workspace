@@ -1,10 +1,15 @@
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.models.datatype import XmlDate
 
-from fpml.confirmation import DataDocument, RollConventionEnum
+from fpml.confirmation import (
+    DataDocument,
+    RollConventionEnum,
+    Schedule,
+)
 from src.validators import FpmlValidator
 from src.validators.exceptions import (
     DateMismatchError,
@@ -213,3 +218,43 @@ def test_fpml_validator_integration_invalid():
     validator = FpmlValidator()
     with pytest.raises(InvalidConfigurationError):
         validator.validate(doc)
+
+
+def test_multiplicity_min_occurs_violation():
+    doc = get_base_doc()
+    # swapStream は min_occurs=1 なので空にするとエラー
+    doc.trade[0].swap.swap_stream = []
+
+    validator = FpmlValidator()
+    with pytest.raises(MissingRequiredFieldError) as excinfo:
+        validator.validate(doc)
+    assert "swap_stream" in str(excinfo.value)
+    assert "requires at least 1" in str(excinfo.value)
+
+
+def test_choice_violation_multiple_set():
+    doc = get_base_doc()
+    # calculation の floatingRateCalculation と fixedRateSchedule の両方を設定して重複させる
+    calc = doc.trade[0].swap.swap_stream[0].calculation_period_amount.calculation
+    calc.fixed_rate_schedule = Schedule(initial_value=Decimal("0.05"))
+
+    validator = FpmlValidator()
+    with pytest.raises(InvalidConfigurationError) as excinfo:
+        validator.validate(doc)
+    assert "Choice constraint violated" in str(excinfo.value)
+    assert "floating_rate_calculation" in str(excinfo.value)
+    assert "fixed_rate_schedule" in str(excinfo.value)
+
+
+def test_choice_violation_missing_required():
+    doc = get_base_doc()
+    # calculation の floatingRateCalculation と fixedRateSchedule を両方 None にして必須Choice違反を起こす
+    calc = doc.trade[0].swap.swap_stream[0].calculation_period_amount.calculation
+    calc.floating_rate_calculation = None
+    calc.fixed_rate_schedule = None
+
+    validator = FpmlValidator()
+    with pytest.raises(MissingRequiredFieldError) as excinfo:
+        validator.validate(doc)
+    assert "Required choice" in str(excinfo.value)
+    assert "Calculation" in str(excinfo.value)

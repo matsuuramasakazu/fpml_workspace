@@ -10,6 +10,13 @@ from src.validators.exceptions import (
 
 
 class Ird1Rule(ValidationRule):
+    """IRD-1 ルール: 変動金利レッグのresetDates存在チェック。
+
+    変動金利レッグ（floatingRateCalculationが存在する）において、
+    O/N RFR（Override/New Risk-Free Rate、calculationParametersが存在する）の場合を除き、
+    resetDatesが設定されていることを検証します。
+    """
+
     @property
     def rule_id(self) -> str:
         return "ird-1"
@@ -40,6 +47,14 @@ class Ird1Rule(ValidationRule):
 
 
 class Ird10Rule(ValidationRule):
+    """IRD-10 ルール: 開始日とrollConventionの整合性チェック。
+
+    スワップストリームの開始日（firstRegularPeriodStartDate または調整前 effectiveDate）の「日」が、
+    rollConventionで指定された値（数値表現）と一致していることを検証します。
+    ただし、rollConventionの値が開始日を含む月の最終日より大きい場合は、最終日を期待値とします。
+    数値以外のrollConvention（EOM, IMM等）の場合は検証をスキップします。
+    """
+
     @property
     def rule_id(self) -> str:
         return "ird-10"
@@ -91,6 +106,14 @@ class Ird10Rule(ValidationRule):
 
 
 class Ird11Rule(ValidationRule):
+    """IRD-11 ルール: 終了日とrollConventionの整合性チェック。
+
+    スワップストリームの終了日（lastRegularPeriodEndDate または調整前 terminationDate）の「日」が、
+    rollConventionで指定された値（数値表現）と一致していることを検証します。
+    ただし、rollConventionの値が終了日を含む月の最終日より大きい場合は、最終日を期待値とします。
+    数値以外のrollConvention（EOM, IMM等）の場合は検証をスキップします。
+    """
+
     @property
     def rule_id(self) -> str:
         return "ird-11"
@@ -142,6 +165,13 @@ class Ird11Rule(ValidationRule):
 
 
 class Ird12Rule(ValidationRule):
+    """IRD-12 ルール: 計算頻度と支払頻度の整合性チェック。
+
+    スワップストリームの計算頻度（calculationPeriodFrequency）と支払頻度（paymentFrequency）の
+    単位が互換（月ベース同士、または日ベース同士など）であり、かつ数学的に一方が他方を
+    割り切れる（整数倍の関係にある）ことを検証します。
+    """
+
     @property
     def rule_id(self) -> str:
         return "ird-12"
@@ -214,6 +244,12 @@ class Ird12Rule(ValidationRule):
 
 
 class Ird21Rule(ValidationRule):
+    """IRD-21 ルール: 複数レッグ間の調整前有効日の同一性チェック。
+
+    スワップ取引に含まれるすべてのスワップストリーム（レッグ）間で、
+    調整前の有効日（effectiveDate.unadjustedDate）が一致していることを検証します。
+    """
+
     @property
     def rule_id(self) -> str:
         return "ird-21"
@@ -254,6 +290,12 @@ class Ird21Rule(ValidationRule):
 
 
 class Ird22Rule(ValidationRule):
+    """IRD-22 ルール: 複数レッグ間の調整前終了日の同一性チェック。
+
+    スワップ取引に含まれるすべてのスワップストリーム（レッグ）間で、
+    調整前の終了日（terminationDate.unadjustedDate）が一致していることを検証します。
+    """
+
     @property
     def rule_id(self) -> str:
         return "ird-22"
@@ -294,6 +336,12 @@ class Ird22Rule(ValidationRule):
 
 
 class Ird14Rule(ValidationRule):
+    """IRD-14 ルール: 有効日と終了日の前後関係チェック。
+
+    スワップストリームにおいて、調整前の終了日（terminationDate.unadjustedDate）が
+    調整前の有効日（effectiveDate.unadjustedDate）より前の日付になっていないことを検証します。
+    """
+
     @property
     def rule_id(self) -> str:
         return "ird-14"

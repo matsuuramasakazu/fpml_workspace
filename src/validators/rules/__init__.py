@@ -7,6 +7,7 @@ from src.validators.rules.ird_rules import (
     Ird21Rule,
     Ird22Rule,
 )
+from src.validators.rules.schema_rules import ChoiceAndMultiplicityRule
 
 __all__ = [
     "Ird1Rule",
@@ -16,4 +17,5 @@ __all__ = [
     "Ird14Rule",
     "Ird21Rule",
     "Ird22Rule",
+    "ChoiceAndMultiplicityRule",
 ]
