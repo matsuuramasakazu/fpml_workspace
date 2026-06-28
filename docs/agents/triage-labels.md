@@ -11,5 +11,4 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 | `wontfix`                  | `wontfix`            | Will not be actioned                     |
 
 > [!IMPORTANT]
-> Issue登録時に存在しないラベルを指定するとエラーになります。Issue作成や編集の前に必ず `gh label list` を実行し、存在するラベルのみを適用するようにしてください。
-
+> If you specify a label that does not exist when creating an GitHub issue, it will result in an error. Be sure to run `gh label list` before creating or editing an issue, and apply only labels that exist.
