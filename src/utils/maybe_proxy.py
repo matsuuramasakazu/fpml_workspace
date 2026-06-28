@@ -1,13 +1,13 @@
 from typing import Any, List, Optional, Union
 
 
-class SafeNavigator:
-    """FpMLのデータクラスなどの深い階層構造に安全にアクセスするためのプロキシクラス。"""
+class MaybeProxy:
+    """FpMLのデータクラスなどの深い階層構造において、Noneを伝播しつつパスを追跡するプロキシクラス。"""
 
     __slots__ = (
         "_obj",
         "_path_segments",
-        "_parent_navigator",
+        "_parent_proxy",
         "_last_valid_object",
         "_failed_at",
     )
@@ -16,13 +16,13 @@ class SafeNavigator:
         self,
         obj: Any,
         path_segments: Optional[List[Union[str, int]]] = None,
-        parent_navigator: Optional["SafeNavigator"] = None,
+        parent_proxy: Optional["MaybeProxy"] = None,
         last_valid_object: Any = None,
         failed_at: Optional[Union[str, int]] = None,
     ):
         self._obj = obj
         self._path_segments = path_segments or []
-        self._parent_navigator = parent_navigator
+        self._parent_proxy = parent_proxy
         self._last_valid_object = last_valid_object
         self._failed_at = failed_at
 
@@ -33,7 +33,7 @@ class SafeNavigator:
 
     @property
     def failed_path(self) -> str:
-        """アクセスしたパスの文字列表現を返します（例: 'swap.swapStream[0].calculationPeriodAmount'）。"""
+        """アクセスしたパスの文字列表現を返します（例: 'swap.swap_stream[0].calculation_period_amount'）。"""
         result = []
         for i, seg in enumerate(self._path_segments):
             if isinstance(seg, int):
@@ -59,17 +59,17 @@ class SafeNavigator:
         """None に遭遇する直前の、実在した最後の親オブジェクトを返します。"""
         return self._last_valid_object
 
-    def __getattr__(self, name: str) -> "SafeNavigator":
+    def __getattr__(self, name: str) -> "MaybeProxy":
         if name.startswith("_"):
             raise AttributeError(name)
 
         current_path = self._path_segments + [name]
 
         if self._obj is None:
-            return SafeNavigator(
+            return MaybeProxy(
                 obj=None,
                 path_segments=current_path,
-                parent_navigator=self,
+                parent_proxy=self,
                 last_valid_object=self._last_valid_object,
                 failed_at=self._failed_at,
             )
@@ -82,33 +82,33 @@ class SafeNavigator:
             )
 
         if val is None:
-            return SafeNavigator(
+            return MaybeProxy(
                 obj=None,
                 path_segments=current_path,
-                parent_navigator=self,
+                parent_proxy=self,
                 last_valid_object=self._obj,
                 failed_at=name,
             )
 
-        return SafeNavigator(
+        return MaybeProxy(
             obj=val,
             path_segments=current_path,
-            parent_navigator=self,
+            parent_proxy=self,
             last_valid_object=None,
             failed_at=None,
         )
 
-    def __getitem__(self, index: Union[int, slice]) -> "SafeNavigator":
+    def __getitem__(self, index: Union[int, slice]) -> "MaybeProxy":
         if not isinstance(index, int):
             raise TypeError("Index must be an integer")
 
         current_path = self._path_segments + [index]
 
         if self._obj is None:
-            return SafeNavigator(
+            return MaybeProxy(
                 obj=None,
                 path_segments=current_path,
-                parent_navigator=self,
+                parent_proxy=self,
                 last_valid_object=self._last_valid_object,
                 failed_at=self._failed_at,
             )
@@ -121,30 +121,30 @@ class SafeNavigator:
         try:
             val = self._obj[index]
         except IndexError:
-            return SafeNavigator(
+            return MaybeProxy(
                 obj=None,
                 path_segments=current_path,
-                parent_navigator=self,
+                parent_proxy=self,
                 last_valid_object=self._obj,
                 failed_at=index,
             )
 
         if val is None:
-            return SafeNavigator(
+            return MaybeProxy(
                 obj=None,
                 path_segments=current_path,
-                parent_navigator=self,
+                parent_proxy=self,
                 last_valid_object=self._obj,
                 failed_at=index,
             )
 
-        return SafeNavigator(
+        return MaybeProxy(
             obj=val,
             path_segments=current_path,
-            parent_navigator=self,
+            parent_proxy=self,
             last_valid_object=None,
             failed_at=None,
         )
 
     def __repr__(self) -> str:
-        return f"SafeNavigator(value={self._obj!r}, path={self.failed_path})"
+        return f"MaybeProxy(value={self._obj!r}, path={self.failed_path})"
