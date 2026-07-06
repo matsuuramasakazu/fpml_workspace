@@ -1,17 +1,18 @@
 import dataclasses
-from typing import Any, Dict
+from typing import Any, Dict, Generator, Tuple
 
 
 class ReferenceResolver:
     """FpMLモデル内のhref参照を解決するためのリゾルバー。"""
 
     def __init__(self, document: Any):
-        """指定されたFpMLドキュメント（または任意のツリー）をトラバースしてidインデックスを作成します。"""
+        """指定されたFpMLドキュメント（または任意のツリー）をトラバースする準備を行います。"""
         self._id_map: Dict[str, Any] = {}
-        self._build_index(document)
+        self._generator = self._traverse(document)
+        self._generator_finished = False
 
-    def _build_index(self, obj: Any) -> None:
-        """再帰的にオブジェクトを探索し、id属性を持つものをマップに登録します。"""
+    def _traverse(self, obj: Any) -> Generator[Tuple[str, Any], None, None]:
+        """再帰的にオブジェクトを探索し、id属性を持つものをyieldします。"""
         if obj is None:
             return
 
@@ -23,18 +24,18 @@ class ReferenceResolver:
             # id属性のチェック
             obj_id = getattr(obj, "id", None)
             if obj_id is not None:
-                self._id_map[obj_id] = obj
+                yield obj_id, obj
 
             # フィールドの再帰的探索
             for field_def in dataclasses.fields(obj):
                 val = getattr(obj, field_def.name)
-                self._build_index(val)
+                yield from self._traverse(val)
         elif isinstance(obj, list):
             for item in obj:
-                self._build_index(item)
+                yield from self._traverse(item)
         elif isinstance(obj, dict):
             for item in obj.values():
-                self._build_index(item)
+                yield from self._traverse(item)
 
     def resolve(self, reference: Any) -> Any:
         """ReferenceAbstractオブジェクトのhrefを元に対象オブジェクトを返します。"""
@@ -43,7 +44,20 @@ class ReferenceResolver:
         if href is None:
             raise ValueError("Reference has no href attribute")
 
-        if href not in self._id_map:
-            raise KeyError(f"Reference ID '{href}' could not be resolved.")
+        # キャッシュにあれば即時返却
+        if href in self._id_map:
+            return self._id_map[href]
 
-        return self._id_map[href]
+        # キャッシュになく、ジェネレータが終了していなければ探索を進める
+        if not self._generator_finished:
+            try:
+                while href not in self._id_map:
+                    obj_id, obj = next(self._generator)
+                    if obj_id in self._id_map:
+                        raise ValueError(f"Duplicate ID '{obj_id}' found in document.")
+                    self._id_map[obj_id] = obj
+                return self._id_map[href]
+            except StopIteration:
+                self._generator_finished = True
+
+        raise KeyError(f"Reference ID '{href}' could not be resolved.")
